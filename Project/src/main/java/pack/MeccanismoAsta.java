@@ -1,10 +1,13 @@
+package pack;
+
 import java.util.ArrayList;
 import java.util.Date;
 
-public class MeccanismoAsta implements AuctionMechanism{
+public class MeccanismoAsta implements AuctionMechanism {
     ArrayList<Asta> aste;
 
     public MeccanismoAsta() {
+
         this.aste = new ArrayList<Asta>();
     }
 

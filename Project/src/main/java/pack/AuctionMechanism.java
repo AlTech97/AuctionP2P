@@ -1,3 +1,5 @@
+package pack;
+
 import java.util.Date;
 public interface AuctionMechanism {
 

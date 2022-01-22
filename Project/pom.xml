@@ -37,7 +37,7 @@
                             <archive>
                                 <manifest>
                                     <mainClass>
-                                        org.example.Asta.mainClass
+                                        pack.mainClass
                                     </mainClass>
                                 </manifest>
                             </archive>
