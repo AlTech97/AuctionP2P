@@ -16,4 +16,4 @@ release.properties
 dependency-reduced-pom.xml
 buildNumber.properties
 
-idea/
+/.idea

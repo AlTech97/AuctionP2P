@@ -122,7 +122,7 @@ public class PeerComunication {
 
     public boolean abbandonaRete() {
 
-        for(String topic: new ArrayList<String>(topics)) disiscriviTopic(topic);
+        for(String topic: new ArrayList<String>(topics)) disiscriviDaTopic(topic);
         dht.peer().announceShutdown().start().awaitUninterruptibly();
         return true;
     }
