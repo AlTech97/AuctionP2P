@@ -62,6 +62,7 @@ public class MeccanismoAsta implements AuctionMechanism {
             //dht.get(location_key) restituisce una coppia [key,value]
             FutureGet futureGet = dht.get(Number160.createHash(_auction_name)).start();
             futureGet.awaitUninterruptibly();
+            //se la lettura della dht ha successo e non c'è un occorrenza con il nome dell'asta
             if (futureGet.isSuccess() && futureGet.isEmpty()) {
                 //metodo dht.put(key, value) aggiunge una linea nella DHT con chiave e valore associato
                 dht.put(Number160.createHash(_auction_name)).data(new Data(new HashSet<PeerAddress>()))
@@ -75,20 +76,6 @@ public class MeccanismoAsta implements AuctionMechanism {
             e.printStackTrace();
         }
         return false;
-        /*
-        //controllo se esiste già un asta creata da me con questo nome
-        Asta a = search(_auction_name);
-        if(a != null){
-            if(a.getStatus().compareTo(Status.aperta)==0){
-                return false;
-            }
-        }
-        //aggiungere logica per ricercare l'asta anche negli altri nodi, se non esiste un asta con lo stesso nome negli
-        // altri allora aggiungila tra le mie aste con le seguenti 2 linee e return true
-        Asta nuova = new Asta(_auction_name,_description,_end_time,_reserved_price);
-        aste.add(nuova);
-        return true;
-        */
     }
 
     //rimuovi una mia asta. Solo il proprietario avrà successo
@@ -110,8 +97,7 @@ public class MeccanismoAsta implements AuctionMechanism {
         try {
             FutureGet futureGet = dht.get(Number160.createHash(_auction_name)).start();
             futureGet.awaitUninterruptibly();
-            if (futureGet.isSuccess()) {
-                if(futureGet.isEmpty() ) return false;
+            if (futureGet.isSuccess() && nomi.contains(_auction_name) && !futureGet.isEmpty()) {
                 HashSet<PeerAddress> peers_on_topic;
                 peers_on_topic = (HashSet<PeerAddress>) futureGet.dataMap().values().iterator().next().object();
                 peers_on_topic.remove(dht.peer().peerAddress());
