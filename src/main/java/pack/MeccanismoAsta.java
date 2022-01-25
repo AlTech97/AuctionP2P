@@ -91,7 +91,7 @@ public class MeccanismoAsta implements AuctionMechanism {
         */
     }
 
-    //rimuovi un asta, solo il proprietario dell'asta avrà successo
+    //rimuovi una mia asta. Solo il proprietario avrà successo
     public boolean removeAuction(String _auction_name){
         //rimozione dalla lista e cambiamento di stato in chiusa.
         Asta a = search(_auction_name);
@@ -105,6 +105,26 @@ public class MeccanismoAsta implements AuctionMechanism {
         return false;
     }
 
+    //abbandona un asta non mia
+    public boolean leaveAuction(String _auction_name){
+        try {
+            FutureGet futureGet = dht.get(Number160.createHash(_auction_name)).start();
+            futureGet.awaitUninterruptibly();
+            if (futureGet.isSuccess()) {
+                if(futureGet.isEmpty() ) return false;
+                HashSet<PeerAddress> peers_on_topic;
+                peers_on_topic = (HashSet<PeerAddress>) futureGet.dataMap().values().iterator().next().object();
+                peers_on_topic.remove(dht.peer().peerAddress());
+                dht.put(Number160.createHash(_auction_name)).data(new Data(peers_on_topic)).start().awaitUninterruptibly();
+                nomi.remove(_auction_name);
+                return true;
+            }
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     /**
      * Checks the status of the auction.
      *
@@ -113,10 +133,6 @@ public class MeccanismoAsta implements AuctionMechanism {
      */
     @Override
     public String checkAuction(String _auction_name) {
-        //cerca nelle proprie aste per ottenere lo stato
-        Asta a = search(_auction_name);
-        if(a != null)
-            return a.getStatus().toString();
         return null;
     }
 
@@ -132,6 +148,13 @@ public class MeccanismoAsta implements AuctionMechanism {
         return null;
     }
 
+    //abbandona la rete P2P disiscrivendosi prima da tutte le aste
+    public void leaveNetwork() {
+        for(String nome: new ArrayList<String>(nomi)) leaveAuction(nome);
+        dht.peer().announceShutdown().start().awaitUninterruptibly();
+    }
+
+    //cerca un asta tra quelle che ho creato e restituiscila se esiste
     private Asta search ( String _auction_name){
         for(Asta a: aste ){
             if(a.getName().equals(_auction_name))
