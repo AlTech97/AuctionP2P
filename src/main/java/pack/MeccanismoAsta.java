@@ -98,10 +98,11 @@ public class MeccanismoAsta implements AuctionMechanism {
             FutureGet futureGet = dht.get(Number160.createHash(_auction_name)).start();
             futureGet.awaitUninterruptibly();
             if (futureGet.isSuccess() && nomi.contains(_auction_name) && !futureGet.isEmpty()) {
-                HashSet<PeerAddress> peers_on_topic;
-                peers_on_topic = (HashSet<PeerAddress>) futureGet.dataMap().values().iterator().next().object();
-                peers_on_topic.remove(dht.peer().peerAddress());
-                dht.put(Number160.createHash(_auction_name)).data(new Data(peers_on_topic)).start().awaitUninterruptibly();
+                HashSet<PeerAddress> peers_on_auction;
+                peers_on_auction = (HashSet<PeerAddress>) futureGet.dataMap().values().iterator().next().object();
+                peers_on_auction.remove(dht.peer().peerAddress());
+                dht.put(Number160.createHash(_auction_name)).data(new Data(peers_on_auction))
+                        .start().awaitUninterruptibly();
                 nomi.remove(_auction_name);
                 return true;
             }
@@ -131,6 +132,29 @@ public class MeccanismoAsta implements AuctionMechanism {
      */
     @Override
     public String placeAbid(String _auction_name, double _bid_amount) {
+
+            try {
+                FutureGet futureGet = dht.get(Number160.createHash(_auction_name)).start();
+                futureGet.awaitUninterruptibly();
+                if (futureGet.isSuccess() && !futureGet.isEmpty() ) {
+                    HashSet<PeerAddress> peers_on_topic = (HashSet<PeerAddress>)
+                            futureGet.dataMap().values().iterator().next().object();
+
+                    if(!nomi.contains(_auction_name)) {      //se non sono iscritto all'asta su cui voglio puntare prima iscriviti
+                        peers_on_topic.add(dht.peer().peerAddress());
+                        dht.put(Number160.createHash(_auction_name)).data(new Data(peers_on_topic))
+                                .start().awaitUninterruptibly();
+                        nomi.add(_auction_name);
+                    }
+                    //fai la puntata
+                    for(PeerAddress peer: peers_on_topic) {
+
+                    }
+                }
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
+
         return null;
     }
 

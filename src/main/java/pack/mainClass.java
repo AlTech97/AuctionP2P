@@ -76,7 +76,7 @@ public class mainClass {
                         if(peer.leaveAuction(nome))
                             System.out.println("Hai abbandonato l'asta\n");
                         else
-                            System.out.println("L'asta indicata non esiste\n");
+                            System.out.println("Non segui l'asta che hai indicato\n");
                         break;
                     case 4:
                         System.out.println("Inserisci il nome dell'asta su cui vuoi puntare: \n");
