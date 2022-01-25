@@ -61,13 +61,15 @@ public class mainClass {
                         }catch (ParseException e) {
                             System.out.println("Formato data non valido.\n");
                         }
+                        break;
                     case 2:
                         System.out.println("Inserisci il nome dell'asta da eliminare: \n");
                         nome = br.readLine();
                         if(peer.removeAuction(nome))
                             System.out.println("Asta eliminata con successo\n");
                         else
-                            System.out.println("Asta inesistente\n");;
+                            System.out.println("Asta inesistente\n");
+                        break;
                     case 3:
                         System.out.println("Inserisci il nome dell'asta da cui vuoi uscire: \n");
                         nome = br.readLine();
@@ -75,6 +77,7 @@ public class mainClass {
                             System.out.println("Hai abbandonato l'asta\n");
                         else
                             System.out.println("L'asta indicata non esiste\n");
+                        break;
                     case 4:
                         System.out.println("Inserisci il nome dell'asta su cui vuoi puntare: \n");
                         nome = br.readLine();
@@ -86,6 +89,7 @@ public class mainClass {
                             System.out.println("Puntata effettuata\n");
                         else
                             System.out.println("Puntata non effettuata\n");
+                        break;
                     case 5:
                         peer.leaveNetwork();
                         System.out.println("Rete abbandonata, termino il programma.\n");
@@ -98,5 +102,6 @@ public class mainClass {
             System.out.println(e);
             System.exit(1);
         }
+        return;
     }
 }
