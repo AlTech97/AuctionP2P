@@ -34,9 +34,10 @@ public class mainClass {
                 System.out.println("MENU: Digita un numero per effettuare l'operazione\n");
                 System.out.println("(1) - CREA UN'ASTA\n");
                 System.out.println("(2) - ELIMINA ASTA\n");
-                System.out.println("(3) - ABBANDONA UN'ASTA\n");
-                System.out.println("(4) - FAI UNA PUNTATA\n");
-                System.out.println("(5) - ESCI\n");
+                System.out.println("(3) - SEGUI UN'ASTA\n");
+                System.out.println("(4) - ABBANDONA UN'ASTA\n");
+                System.out.println("(5) - FAI UNA PUNTATA\n");
+                System.out.println("(6) - ESCI\n");
                 int menu=  Integer.parseInt(br.readLine());
                 String nome;        //nome dell'asta su cui operare
                 switch(menu){
@@ -70,15 +71,23 @@ public class mainClass {
                         else
                             System.out.println("Asta inesistente\n");
                         break;
-                    case 3:
+                    case 3: //follow dell'asta
                         System.out.println("Inserisci il nome dell'asta da cui vuoi uscire: \n");
                         nome = br.readLine();
-                        if(peer.leaveAuction(nome))
+                        if(peer.followAuction(nome))
+                            System.out.println("Ora segui l'asta indicata\n");
+                        else
+                            System.out.println("L'asta indicata è già tra quelle seguite\n");
+                        break;
+                    case 4: //unfollow dell'asta
+                        System.out.println("Inserisci il nome dell'asta da cui vuoi uscire: \n");
+                        nome = br.readLine();
+                        if(peer.unfollowAuction(nome))
                             System.out.println("Hai abbandonato l'asta\n");
                         else
                             System.out.println("Non segui l'asta che hai indicato\n");
                         break;
-                    case 4:
+                    case 5: //fai una puntata
                         System.out.println("Inserisci il nome dell'asta su cui vuoi puntare: \n");
                         nome = br.readLine();
                         System.out.println("Inserisci il valore del'offerta Es:10.90 \n");
@@ -90,11 +99,12 @@ public class mainClass {
                         else
                             System.out.println("Puntata non effettuata\n");
                         break;
-                    case 5:
+                    case 6: //exit
                         peer.leaveNetwork();
                         System.out.println("Rete abbandonata, termino il programma.\n");
                         System.exit(0);
                     default:
+                        System.out.println("Valore errato, inserire un numero corretto\n");
                         break;
                 }
             }

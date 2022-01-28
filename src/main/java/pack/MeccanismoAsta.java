@@ -1,15 +1,12 @@
 package pack;
 
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Date;
+import java.text.DateFormat;
+import java.util.*;
 
-import net.tomp2p.dht.FutureGet;
-import net.tomp2p.dht.PeerBuilderDHT;
+import net.tomp2p.dht.*;
 import net.tomp2p.futures.FutureBootstrap;
 import net.tomp2p.p2p.Peer;
-import net.tomp2p.dht.PeerDHT;
 import net.tomp2p.p2p.PeerBuilder;
 import net.tomp2p.peers.Number160;
 import net.tomp2p.peers.PeerAddress;
@@ -58,20 +55,47 @@ public class MeccanismoAsta implements AuctionMechanism {
      */
     @Override
     public boolean createAuction(String _auction_name, Date _end_time, double _reserved_price, String _description) {
+        //data di oggi
+        long milliseconds = System.currentTimeMillis();
+        Date data = new Date(milliseconds);
         try {
-            //dht.get(location_key) restituisce una coppia [key,value]
-            FutureGet futureGet = dht.get(Number160.createHash(_auction_name)).start();
-            futureGet.awaitUninterruptibly();
-            //se la lettura della dht ha successo e non c'è un occorrenza con il nome dell'asta
-            if (futureGet.isSuccess() && futureGet.isEmpty()) {
-                //metodo dht.put(key, value) aggiunge una linea nella DHT con chiave e valore associato
-                dht.put(Number160.createHash(_auction_name)).data(new Data(new HashSet<PeerAddress>()))
-                        .start().awaitUninterruptibly();
-                Asta nuova = new Asta(_auction_name, _description, _end_time, _reserved_price, peer.peerID());
-                aste.add(nuova);
-                return true;
+            //eseguo prima dei controlli sulla correttezza dei parametri
+            if(_end_time == null || _end_time.before(data))
+                throw new Exception("La data inserita non è corretta\n");
+            else{
+                if(_reserved_price < 0)
+                    throw new Exception("Il prezzo di riserva deve essere maggiore o uguale a zero\n");
+                else{
+                    ArrayList<String> nomiAste = getEveryAuctionNames();
+                    if(nomiAste.contains(_auction_name))
+                        throw new Exception("Il nome dell'asta indicato è già esistente\n");
+                    else{
+                        //inserisco prima l'asta fisicamente e successivamente la aggiungo in lista
+                        Asta nuova = new Asta(_auction_name, _description, _end_time, _reserved_price, peer.peerID());
+                        FuturePut future = dht.put(Number160.createHash(_auction_name))
+                                .data(new Data(nuova)).start().awaitUninterruptibly();
+                        if(!future.isSuccess())
+                            throw new Exception("Errore durante l'aggiunta dell'asta in lista\n");
+                        else{
+                            //aggiungi il nome dell'asta nella lista globale
+                            nomiAste.add(_auction_name);
+                            FuturePut future2 =  dht.put(Number160.createHash("auctionIndex")).putIfAbsent()
+                                    .data(new Data(nomiAste)).start().awaitUninterruptibly();
+                            if(!future2.isSuccess()) {
+                                //se l'aggiunta in lista non ha successo elimina l'oggetto Asta appena aggiunto alla DHT
+                                FutureRemove delete = dht.remove(Number160.createHash(_auction_name)).all()
+                                        .start().awaitUninterruptibly();
+                                throw new Exception("Errore durante l'aggiornamento della lista dei nomi\n");
+                            }
+                            else{
+                                //tutte le operazioni sono state eseguite con successo, aggiungi la nuova asta alla lista locale delle mie aste
+                                aste.add(nuova);
+                                return true;
+                            }
+                        }
+                    }
+                }
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -80,20 +104,60 @@ public class MeccanismoAsta implements AuctionMechanism {
 
     //rimuovi una mia asta. Solo il proprietario avrà successo
     public boolean removeAuction(String _auction_name){
-        //rimozione dalla lista e cambiamento di stato in chiusa.
-        Asta a = search(_auction_name);
-        if(a != null) {
-            if(a.close(peer.peerID())){
-                aste.remove(a);
-                return true;
+        Asta a = localSearch(_auction_name);
+        if(a != null && a.isOpen()) {   //se l'asta cercata è tra quelle che ho creato ed è ancora aperta
+            try{
+                //aggiorna la lista di nomi delle aste
+                ArrayList<String> nomiAste = getEveryAuctionNames();
+                if(nomiAste.contains(_auction_name)){
+                    if(nomiAste.remove(_auction_name)){
+                        FuturePut future = dht.put(Number160.createHash("auctionIndex")).putIfAbsent()
+                                .data(new Data(nomiAste)).start().awaitUninterruptibly();
+                        if(!future.isSuccess())
+                            throw new Exception("Errore durante la rimozione del nome dell'asta\n");
+                        else{
+                            FutureRemove future2 = dht.remove(Number160.createHash(_auction_name)).all()
+                                    .start().awaitUninterruptibly();
+                            if(!future2.isSuccess())
+                                throw new Exception("Errore durante la rimozione dell'asta\n");
+                            else{
+                                aste.remove(a);
+                                return true;
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
 
         }
         return false;
     }
 
+    public boolean followAuction(String _auction_name){
+        if (!nomi.contains(_auction_name)) {
+            try {
+                FutureGet futureGet = dht.get(Number160.createHash(_auction_name)).start();
+                futureGet.awaitUninterruptibly();
+                if (futureGet.isSuccess() && !futureGet.isEmpty()) {
+                    HashSet<PeerAddress> peers_following = (HashSet<PeerAddress>)
+                            futureGet.dataMap().values().iterator().next().object();
+                    peers_following.add(dht.peer().peerAddress());
+                    dht.put(Number160.createHash(_auction_name)).data(new Data(peers_following))
+                            .start().awaitUninterruptibly();
+                    nomi.add(_auction_name);
+                    return true;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return false;
+    }
+
     //abbandona un asta non mia
-    public boolean leaveAuction(String _auction_name){
+    public boolean unfollowAuction(String _auction_name){
         try {
             FutureGet futureGet = dht.get(Number160.createHash(_auction_name)).start();
             futureGet.awaitUninterruptibly();
@@ -132,44 +196,60 @@ public class MeccanismoAsta implements AuctionMechanism {
      */
     @Override
     public String placeAbid(String _auction_name, double _bid_amount) {
+        if(!nomi.contains(_auction_name)) {      //se non sono iscritto all'asta su cui voglio puntare prima iscriviti
+            followAuction(_auction_name);
+        }
+        try {
+            FutureGet futureGet = dht.get(Number160.createHash(_auction_name)).start();
+            futureGet.awaitUninterruptibly();
+            if (futureGet.isSuccess() && !futureGet.isEmpty() ) {
+                HashSet<PeerAddress> peers_on_topic = (HashSet<PeerAddress>)
+                        futureGet.dataMap().values().iterator().next().object();
+                //fai la puntata
+                for(PeerAddress peer: peers_on_topic) {
 
-            try {
-                FutureGet futureGet = dht.get(Number160.createHash(_auction_name)).start();
-                futureGet.awaitUninterruptibly();
-                if (futureGet.isSuccess() && !futureGet.isEmpty() ) {
-                    HashSet<PeerAddress> peers_on_topic = (HashSet<PeerAddress>)
-                            futureGet.dataMap().values().iterator().next().object();
-
-                    if(!nomi.contains(_auction_name)) {      //se non sono iscritto all'asta su cui voglio puntare prima iscriviti
-                        peers_on_topic.add(dht.peer().peerAddress());
-                        dht.put(Number160.createHash(_auction_name)).data(new Data(peers_on_topic))
-                                .start().awaitUninterruptibly();
-                        nomi.add(_auction_name);
-                    }
-                    //fai la puntata
-                    for(PeerAddress peer: peers_on_topic) {
-
-                    }
                 }
-            }catch (Exception e) {
-                e.printStackTrace();
+                return Status.aperta.toString();
             }
-
-        return null;
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
+        return Status.chiusa.toString();
     }
 
     //abbandona la rete P2P disiscrivendosi prima da tutte le aste
     public void leaveNetwork() {
-        for(String nome: new ArrayList<String>(nomi)) leaveAuction(nome);
+        for(String nome: new ArrayList<String>(nomi)) 
+            unfollowAuction(nome);
         dht.peer().announceShutdown().start().awaitUninterruptibly();
     }
 
     //cerca un asta tra quelle che ho creato e restituiscila se esiste
-    private Asta search ( String _auction_name){
+    private Asta localSearch ( String _auction_name){
         for(Asta a: aste ){
             if(a.getName().equals(_auction_name))
                 return a;
         }
         return null;
     }
+    public Asta globalSearch(String _auction_name) throws Exception{
+        FutureGet fg = this.dht.get(Number160.createHash(_auction_name)).getLatest().start().awaitUninterruptibly();
+        if (fg.isSuccess() && !fg.isEmpty()) {
+            return (Asta) fg.data().object();
+        }
+        else
+            return null;
+    }
+    public ArrayList<String> getEveryAuctionNames() throws Exception{
+        FutureGet fg = this.dht.get(Number160.createHash("auctionIndex")).getLatest().start().awaitUninterruptibly();
+        if (fg.isSuccess() && !fg.isEmpty()) {
+                return (ArrayList<String>) fg.data().object();
+        } else{
+            return new ArrayList<String>();
+        }
+    }
+
+
+
+
 }

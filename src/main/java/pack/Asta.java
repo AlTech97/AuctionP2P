@@ -2,16 +2,19 @@ package pack;
 
 import net.tomp2p.peers.Number160;
 
+import java.io.Serializable;
 import java.util.Date;
+import java.util.Objects;
 
-public class Asta {
-    String name, description;
-    Date endTime;
-    double riserva;     //prezzo minimo di vendita
-    double offertaAtt;  //prezzo dell'ultima offerta
-    double offertaPrec; //prezzo dell'offerta precedente, pagato dal vincitore
-    Status status;      //enumerazione dello stato dell'asta
-    Number160 owner;    //id del creatore dell'asta.
+public class Asta implements Serializable {
+    private static final long serialVersionUID = 1L;
+    private String name, description;
+    private Date endTime;
+    private double riserva;     //prezzo minimo di vendita
+    private Bid offertaAtt;  //prezzo dell'ultima offerta
+    private Bid offertaPrec; //prezzo dell'offerta precedente, pagato dal vincitore
+    private Status status;      //enumerazione dello stato dell'asta
+    private Number160 owner;    //id del creatore dell'asta.
 
 
     public Asta(String name, String description, Date endTime, double minPrice, Number160 owner) {
@@ -19,18 +22,34 @@ public class Asta {
         this.description = description;
         this.endTime = endTime;
         this.riserva = minPrice;
-        this.offertaAtt = 0.0;
-        this.offertaPrec = 0.0;
         this.status = Status.aperta;
         this.owner = owner;
     }
 
-    public boolean close(Number160 id){
-        if(id == owner){
-            status = Status.chiusa;
+    //chiude l'asta se è scaduto il tempo
+    public boolean timeClose(){
+        //data di oggi
+        long milliseconds = System.currentTimeMillis();
+        Date data = new Date(milliseconds);
+        if(data.after(endTime) ){
+            this.status = Status.chiusa;
             return true;
         }
         return false;
+    }
+    public boolean close(Number160 id){
+        if(id==owner){
+            this.status = Status.chiusa;
+            return true;
+        }
+        return false;
+    }
+    public boolean isOpen(){
+        return this.status == Status.aperta;
+    }
+
+    public boolean isClosed(){
+        return this.status == Status.chiusa;
     }
 
     //metodi get e set dei campi
@@ -66,19 +85,19 @@ public class Asta {
         this.riserva = riserva;
     }
 
-    public double getOffertaAtt() {
+    public Bid getOffertaAtt() {
         return offertaAtt;
     }
 
-    public void setOffertaAtt(double offertaAtt) {
+    public void setOffertaAtt(Bid offertaAtt) {
         this.offertaAtt = offertaAtt;
     }
 
-    public double getOffertaPrec() {
+    public Bid getOffertaPrec() {
         return offertaPrec;
     }
 
-    public void setOffertaPrec(double offertaPrec) {
+    public void setOffertaPrec(Bid offertaPrec) {
         this.offertaPrec = offertaPrec;
     }
 
@@ -86,7 +105,19 @@ public class Asta {
         return status;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Asta asta = (Asta) o;
+        return Double.compare(asta.riserva, riserva) == 0 && name.equals(asta.name) &&
+                Objects.equals(description, asta.description) && endTime.equals(asta.endTime) &&
+                Objects.equals(offertaAtt, asta.offertaAtt) && Objects.equals(offertaPrec, asta.offertaPrec) &&
+                status == asta.status && owner.equals(asta.owner);
+    }
 
-
-
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, description, endTime, riserva, offertaAtt, offertaPrec, status, owner);
+    }
 }
