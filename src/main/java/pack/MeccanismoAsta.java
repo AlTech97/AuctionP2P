@@ -104,36 +104,66 @@ public class MeccanismoAsta implements AuctionMechanism {
 
     //rimuovi una mia asta. Solo il proprietario avrà successo
     public boolean removeAuction(String _auction_name){
-        Asta a = localSearch(_auction_name);
-        if(a != null && a.isOpen()) {   //se l'asta cercata è tra quelle che ho creato ed è ancora aperta
             try{
-                //aggiorna la lista di nomi delle aste
-                ArrayList<String> nomiAste = getEveryAuctionNames();
-                if(nomiAste.remove(_auction_name)){
-                    FuturePut future = dht.put(Number160.createHash("auctionIndex"))
-                            .data(new Data(nomiAste)).start().awaitUninterruptibly();
-                    if(!future.isSuccess())
-                        throw new Exception("Errore durante la rimozione del nome dell'asta\n");
-                    else{
-                        FutureRemove future2 = dht.remove(Number160.createHash(_auction_name)).all()
-                                .start().awaitUninterruptibly();
-                        if(!future2.isSuccess()) {
-                            //riporto la lista allo stato precedente dato che la rimozione dell'asta è fallita
-                            if(nomiAste.add(_auction_name)) {
-                                FuturePut restore = dht.put(Number160.createHash("auctionIndex"))
-                                        .data(new Data(nomiAste)).start().awaitUninterruptibly();
+                Asta a = localSearch(_auction_name);
+                if(a == null || a.isClosed())
+                    throw new Exception("Solo il proprietario può rimuovere l'asta\n");
+                else {
+                    //se l'asta da rimuovere è tra quelle che ho creato ed è ancora aperta
+                    //aggiorna la lista di nomi delle aste
+                    ArrayList<String> nomiAste = getEveryAuctionNames();
+                    if (nomiAste.remove(_auction_name)) {
+                        FuturePut future = dht.put(Number160.createHash("auctionIndex"))
+                                .data(new Data(nomiAste)).start().awaitUninterruptibly();
+                        if (!future.isSuccess())
+                            throw new Exception("Errore durante la rimozione del nome dell'asta\n");
+                        else {
+                            FutureRemove future2 = dht.remove(Number160.createHash(_auction_name)).all()
+                                    .start().awaitUninterruptibly();
+                            if (!future2.isSuccess()) {
+                                //riporto la lista allo stato precedente dato che la rimozione dell'asta è fallita
+                                if (nomiAste.add(_auction_name)) {
+                                    FuturePut restore = dht.put(Number160.createHash("auctionIndex"))
+                                            .data(new Data(nomiAste)).start().awaitUninterruptibly();
+                                }
+                                throw new Exception("Errore durante la rimozione dell'asta\n");
+                            } else {
+                                aste.remove(a);
+                                return true;
                             }
-                            throw new Exception("Errore durante la rimozione dell'asta\n");
-                        }else{
-                            aste.remove(a);
-                            return true;
                         }
                     }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        return false;
+    }
 
+    public boolean updateAuction(Asta _auction){
+        String _auction_name = _auction.getName();
+        try{
+            if(localSearch(_auction_name) == null)
+                throw new Exception("Solo il proprietario può aggiornare l'asta\n");
+            else {
+                ArrayList<String> lista = getEveryAuctionNames();
+                if (!lista.contains(_auction_name))
+                    throw new Exception("Asta non presente in lista\n");
+                else {
+                    Asta a = globalSearch(_auction_name);
+                    if (a == null)
+                        throw new Exception("Non è stata trovata alcun'asta con questo nome\n");
+                    else {
+                        FuturePut future = dht.put(Number160.createHash(_auction_name))
+                                .data(new Data(_auction)).start().awaitUninterruptibly();
+                        if (!future.isSuccess())
+                            throw new Exception("Errore nell'aggiornamento dell'asta\n");
+                        return true;
+                    }
+                }
+            }
+        }catch(Exception e){
+            e.printStackTrace();
         }
         return false;
     }

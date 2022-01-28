@@ -1,6 +1,7 @@
 package testPack;
 
 import org.junit.jupiter.api.*;
+import pack.Asta;
 import pack.MeccanismoAsta;
 import pack.MessageListener;
 import pack.Status;
@@ -36,6 +37,7 @@ public class JunitTestAuction {
     }
     @Test
     @Order(1)
+    @Disabled
     void testCaseCreateAuction(TestInfo testInfo) throws ParseException {
         DateFormat formatoData = DateFormat.getDateInstance(DateFormat.SHORT, Locale.ITALY);
         formatoData.setLenient(false);
@@ -63,6 +65,25 @@ public class JunitTestAuction {
         //il proprietario elimina l'asta che ha creato prima
         assertTrue(peer1.removeAuction("Anello"));
     }
+    @Test
+    @Order(3)
+    @Disabled
+    void testCaseUpdateAuction(TestInfo testInfo) throws Exception {
+        DateFormat formatoData = DateFormat.getDateInstance(DateFormat.SHORT, Locale.ITALY);
+        formatoData.setLenient(false);
+        Date data = formatoData.parse("30/01/2022");
+        //il primo peer crea un'asta
+        assertTrue(peer1.createAuction("Anello", data , 50.0, "mai indossato"));
+        Asta a = peer1.globalSearch("Anello");
+        System.out.println("Attualmente la riserva è di: " + a.getRiserva());
+        a.setRiserva(20.0);
+        //provo a far fare l'aggiornamento dell'asta ad un peer diverso dal proprietario e poi dal proprietario
+        assertFalse(peer2.updateAuction(a));
+        assertTrue(peer1.updateAuction(a));
+        Asta b = peer1.globalSearch("Anello");
+        System.out.println("Ora la riserva è di: " + b.getRiserva());
+    }
+
 /*
     @Test
     void testCasePlaceAbid(TestInfo testInfo){
