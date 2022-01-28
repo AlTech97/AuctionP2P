@@ -117,9 +117,14 @@ public class MeccanismoAsta implements AuctionMechanism {
                     else{
                         FutureRemove future2 = dht.remove(Number160.createHash(_auction_name)).all()
                                 .start().awaitUninterruptibly();
-                        if(!future2.isSuccess())
+                        if(!future2.isSuccess()) {
+                            //riporto la lista allo stato precedente dato che la rimozione dell'asta è fallita
+                            if(nomiAste.add(_auction_name)) {
+                                FuturePut restore = dht.put(Number160.createHash("auctionIndex"))
+                                        .data(new Data(nomiAste)).start().awaitUninterruptibly();
+                            }
                             throw new Exception("Errore durante la rimozione dell'asta\n");
-                        else{
+                        }else{
                             aste.remove(a);
                             return true;
                         }
@@ -133,11 +138,17 @@ public class MeccanismoAsta implements AuctionMechanism {
         return false;
     }
 
+    /*
+        Per implementare il meccanismo di following per ogni asta creare un ulteriore riga nella DHT
+        con, ad esempio, chiave = nomeAsta+"followers" e per dati un HashSet<PeerAddress> contenente tutti
+        gli indirizzi dei peer che intendono ricevere aggiornamenti in tempo reale con messaggi contenenti
+        lo stato dell'asta e il valore dell'ultima offerta ad esempio.
+     */
     public boolean followAuction(String _auction_name){
+        /*
         if (!nomi.contains(_auction_name)) {
             try {
-                FutureGet futureGet = dht.get(Number160.createHash(_auction_name)).start();
-                futureGet.awaitUninterruptibly();
+                FutureGet futureGet = dht.get(Number160.createHash(_auction_name)).start().awaitUninterruptibly();
                 if (futureGet.isSuccess() && !futureGet.isEmpty()) {
                     HashSet<PeerAddress> peers_following = (HashSet<PeerAddress>)
                             futureGet.dataMap().values().iterator().next().object();
@@ -151,11 +162,15 @@ public class MeccanismoAsta implements AuctionMechanism {
                 e.printStackTrace();
             }
         }
+
+            */
         return false;
     }
 
     //abbandona un asta non mia
     public boolean unfollowAuction(String _auction_name){
+            /*
+        }
         try {
             FutureGet futureGet = dht.get(Number160.createHash(_auction_name)).start();
             futureGet.awaitUninterruptibly();
@@ -171,6 +186,8 @@ public class MeccanismoAsta implements AuctionMechanism {
         }catch (Exception e) {
             e.printStackTrace();
         }
+        */
+
         return false;
     }
 
@@ -182,6 +199,14 @@ public class MeccanismoAsta implements AuctionMechanism {
      */
     @Override
     public String checkAuction(String _auction_name) {
+        try{
+            Asta a = globalSearch(_auction_name);
+            if(a!= null){
+                return a.getStatus().toString();
+            }
+        }catch(Exception e){
+            e.printStackTrace();
+        }
         return null;
     }
 
@@ -194,6 +219,8 @@ public class MeccanismoAsta implements AuctionMechanism {
      */
     @Override
     public String placeAbid(String _auction_name, double _bid_amount) {
+        /*
+        }
         if(!nomi.contains(_auction_name)) {      //se non sono iscritto all'asta su cui voglio puntare prima iscriviti
             followAuction(_auction_name);
         }
@@ -212,6 +239,7 @@ public class MeccanismoAsta implements AuctionMechanism {
         }catch (Exception e) {
             e.printStackTrace();
         }
+      */
         return Status.chiusa.toString();
     }
 
@@ -230,6 +258,7 @@ public class MeccanismoAsta implements AuctionMechanism {
         }
         return null;
     }
+    //cerca un asta nella DHT e restituiscila se esiste
     public Asta globalSearch(String _auction_name) throws Exception{
         FutureGet fg = this.dht.get(Number160.createHash(_auction_name)).getLatest().start().awaitUninterruptibly();
         if (fg.isSuccess() && !fg.isEmpty()) {
@@ -238,6 +267,7 @@ public class MeccanismoAsta implements AuctionMechanism {
         else
             return null;
     }
+    //ottieni la lista dei nomi di tutte le aste attive
     public ArrayList<String> getEveryAuctionNames() throws Exception{
         FutureGet fg = this.dht.get(Number160.createHash("auctionIndex")).getLatest().start().awaitUninterruptibly();
         if (fg.isSuccess() && !fg.isEmpty()) {
