@@ -12,6 +12,7 @@ import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class JunitTestAuction {
     protected MeccanismoAsta peer0, peer1, peer2, peer3;
 
@@ -34,6 +35,7 @@ public class JunitTestAuction {
         peer3 = new MeccanismoAsta(3, "127.0.0.1", new MessageListenerImpl(3));
     }
     @Test
+    @Order(1)
     void testCaseCreateAuction(TestInfo testInfo) throws ParseException {
         DateFormat formatoData = DateFormat.getDateInstance(DateFormat.SHORT, Locale.ITALY);
         formatoData.setLenient(false);
@@ -48,7 +50,19 @@ public class JunitTestAuction {
         //inserisco un'asta con data errata
         assertFalse(peer1.createAuction("Sedia", dataErrata , 20.0, "in ottimo stato"));
     }
-
+    @Test
+    @Order(2)
+    void testCaseRemoveAuction(TestInfo testInfo) throws ParseException {
+        DateFormat formatoData = DateFormat.getDateInstance(DateFormat.SHORT, Locale.ITALY);
+        formatoData.setLenient(false);
+        Date data = formatoData.parse("30/01/2022");
+        //il primo peer crea un'asta
+        assertTrue(peer1.createAuction("Anello", data , 50.0, "mai indossato"));
+        //un altro peer tenta di rimuovere l'asta appena creata
+        assertFalse(peer3.removeAuction("Anello"));
+        //il proprietario elimina l'asta che ha creato prima
+        assertTrue(peer1.removeAuction("Anello"));
+    }
 /*
     @Test
     void testCasePlaceAbid(TestInfo testInfo){

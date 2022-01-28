@@ -79,7 +79,7 @@ public class MeccanismoAsta implements AuctionMechanism {
                         else{
                             //aggiungi il nome dell'asta nella lista globale
                             nomiAste.add(_auction_name);
-                            FuturePut future2 =  dht.put(Number160.createHash("auctionIndex")).putIfAbsent()
+                            FuturePut future2 =  dht.put(Number160.createHash("auctionIndex"))
                                     .data(new Data(nomiAste)).start().awaitUninterruptibly();
                             if(!future2.isSuccess()) {
                                 //se l'aggiunta in lista non ha successo elimina l'oggetto Asta appena aggiunto alla DHT
@@ -109,21 +109,19 @@ public class MeccanismoAsta implements AuctionMechanism {
             try{
                 //aggiorna la lista di nomi delle aste
                 ArrayList<String> nomiAste = getEveryAuctionNames();
-                if(nomiAste.contains(_auction_name)){
-                    if(nomiAste.remove(_auction_name)){
-                        FuturePut future = dht.put(Number160.createHash("auctionIndex")).putIfAbsent()
-                                .data(new Data(nomiAste)).start().awaitUninterruptibly();
-                        if(!future.isSuccess())
-                            throw new Exception("Errore durante la rimozione del nome dell'asta\n");
+                if(nomiAste.remove(_auction_name)){
+                    FuturePut future = dht.put(Number160.createHash("auctionIndex"))
+                            .data(new Data(nomiAste)).start().awaitUninterruptibly();
+                    if(!future.isSuccess())
+                        throw new Exception("Errore durante la rimozione del nome dell'asta\n");
+                    else{
+                        FutureRemove future2 = dht.remove(Number160.createHash(_auction_name)).all()
+                                .start().awaitUninterruptibly();
+                        if(!future2.isSuccess())
+                            throw new Exception("Errore durante la rimozione dell'asta\n");
                         else{
-                            FutureRemove future2 = dht.remove(Number160.createHash(_auction_name)).all()
-                                    .start().awaitUninterruptibly();
-                            if(!future2.isSuccess())
-                                throw new Exception("Errore durante la rimozione dell'asta\n");
-                            else{
-                                aste.remove(a);
-                                return true;
-                            }
+                            aste.remove(a);
+                            return true;
                         }
                     }
                 }
