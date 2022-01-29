@@ -21,7 +21,7 @@ public class mainClass {
 
             }
             public Object parseMessage(Object obj) {
-                System.out.println("\n"+peerId+"] (Direct Message Received) "+obj+"\n\n");
+                System.out.println("\nID:"+peerId+" (Aggiornamento) "+obj+"\n\n");
                 return "success";
             }
         }

@@ -1,26 +1,26 @@
 package pack;
 
-import net.tomp2p.peers.Number160;
+import net.tomp2p.peers.PeerAddress;
 
 import java.io.Serializable;
 
 public class Bid implements Serializable {
     private static final long serialVersionUID = 1L;
-    private Number160 owner;
-    private String auctionName;
-    private double amount;
+    private PeerAddress owner;      //indirizzo di contatto di chi ha effettuato la puntata
+    private String auctionName;     //nome dell'asta su cui si punta
+    private double amount;          //valore della puntata
 
-    public Bid(Number160 owner, String auctionName, double amount) {
+    public Bid(PeerAddress owner, String auctionName, double amount) {
         this.owner = owner;
         this.auctionName = auctionName;
         this.amount = amount;
     }
 
-    public Number160 getOwner() {
+    public PeerAddress getOwner() {
         return owner;
     }
 
-    public void setOwner(Number160 owner) {
+    public void setOwner(PeerAddress owner) {
         this.owner = owner;
     }
 

@@ -1,6 +1,7 @@
 package pack;
 
 import net.tomp2p.peers.Number160;
+import net.tomp2p.peers.PeerAddress;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -11,13 +12,13 @@ public class Asta implements Serializable {
     private String name, description;
     private Date endTime;
     private double riserva;     //prezzo minimo di vendita
-    private Bid offertaAtt;  //prezzo dell'ultima offerta
-    private Bid offertaPrec; //prezzo dell'offerta precedente, pagato dal vincitore
+    private Bid offertaAtt;     //prezzo dell'ultima offerta
+    private Bid offertaPrec;    //prezzo dell'offerta precedente, pagato dal vincitore
     private Status status;      //enumerazione dello stato dell'asta
-    private Number160 owner;    //id del creatore dell'asta.
+    private PeerAddress owner;  //indirizzo di contatto del creatore dell'asta.
 
 
-    public Asta(String name, String description, Date endTime, double minPrice, Number160 owner) {
+    public Asta(String name, String description, Date endTime, double minPrice, PeerAddress owner) {
         this.name = name;
         this.description = description;
         this.endTime = endTime;
@@ -37,13 +38,15 @@ public class Asta implements Serializable {
         }
         return false;
     }
-    public boolean close(Number160 id){
-        if(id==owner){
+
+    public boolean close(PeerAddress address){
+        if(address == owner){
             this.status = Status.chiusa;
             return true;
         }
         return false;
     }
+
     public boolean isOpen(){
         return this.status == Status.aperta;
     }
@@ -103,6 +106,19 @@ public class Asta implements Serializable {
 
     public Status getStatus() {
         return status;
+    }
+
+    @Override
+    public String toString() {
+        return "Asta{" +
+                "nome= '" + name + '\'' +
+                ", descrizione= '" + description + '\'' +
+                ", Termine= " + endTime +
+                ", Prezzo di riserva= " + riserva +
+                ", Offerta attuale= " + offertaAtt +
+                ", Offerta Precedente= " + offertaPrec +
+                ", stato= " + status +
+                '}';
     }
 
     @Override
