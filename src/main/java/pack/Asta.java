@@ -1,6 +1,5 @@
 package pack;
 
-import net.tomp2p.peers.Number160;
 import net.tomp2p.peers.PeerAddress;
 
 import java.io.Serializable;
@@ -16,6 +15,7 @@ public class Asta implements Serializable {
     private Bid offertaPrec;    //prezzo dell'offerta precedente, pagato dal vincitore
     private Status status;      //enumerazione dello stato dell'asta
     private PeerAddress owner;  //indirizzo di contatto del creatore dell'asta.
+    private boolean oneTimeClose;
 
 
     public Asta(String name, String description, Date endTime, double minPrice, PeerAddress owner) {
@@ -25,6 +25,7 @@ public class Asta implements Serializable {
         this.riserva = minPrice;
         this.status = Status.aperta;
         this.owner = owner;
+        oneTimeClose = false;
     }
 
     //chiude l'asta se è scaduto il tempo
@@ -32,8 +33,9 @@ public class Asta implements Serializable {
         //data di oggi
         long milliseconds = System.currentTimeMillis();
         Date data = new Date(milliseconds);
-        if(data.after(endTime) ){
+        if(data.after(endTime) && !oneTimeClose){
             this.status = Status.chiusa;
+            oneTimeClose=true;
             return true;
         }
         return false;
@@ -106,6 +108,10 @@ public class Asta implements Serializable {
 
     public Status getStatus() {
         return status;
+    }
+
+    public PeerAddress getOwner() {
+        return owner;
     }
 
     @Override

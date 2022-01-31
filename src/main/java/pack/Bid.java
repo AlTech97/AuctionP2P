@@ -6,9 +6,9 @@ import java.io.Serializable;
 
 public class Bid implements Serializable {
     private static final long serialVersionUID = 1L;
-    private PeerAddress owner;      //indirizzo di contatto di chi ha effettuato la puntata
-    private String auctionName;     //nome dell'asta su cui si punta
-    private double amount;          //valore della puntata
+    private PeerAddress owner;          //indirizzo di contatto di chi ha effettuato la puntata
+    private String auctionName;         //nome dell'asta su cui si punta
+    private double amount;              //valore della puntata
 
     public Bid(PeerAddress owner, String auctionName, double amount) {
         this.owner = owner;
@@ -18,10 +18,6 @@ public class Bid implements Serializable {
 
     public PeerAddress getOwner() {
         return owner;
-    }
-
-    public void setOwner(PeerAddress owner) {
-        this.owner = owner;
     }
 
     public String getAuctionName() {

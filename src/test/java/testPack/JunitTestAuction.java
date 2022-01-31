@@ -3,42 +3,31 @@ package testPack;
 import org.junit.jupiter.api.*;
 import pack.Asta;
 import pack.MeccanismoAsta;
-import pack.MessageListener;
-import pack.Status;
+import pack.MessageListenerImpl;
 
-import java.text.DateFormat;
-import java.text.ParseException;
 import java.util.Date;
-import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+//@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+
 public class JunitTestAuction {
-    protected MeccanismoAsta peer0, peer1, peer2, peer3;
+    private static MeccanismoAsta peer0, peer1, peer2, peer3;
 
-    public JunitTestAuction() throws Exception{
-        class MessageListenerImpl implements MessageListener {
-            int peerid;
-            public MessageListenerImpl(int peerid)
-            {
-                this.peerid=peerid;
-            }
-            public Object parseMessage(Object obj) {
-                System.out.println(peerid+"] (Direct Message Received) "+obj);
-                return "success";
-            }
+    @BeforeAll
+    static void testCaseGeneratePeers(){
+        assertDoesNotThrow(() ->peer0 = new MeccanismoAsta(0, "127.0.0.1", new MessageListenerImpl(0)));
+        assertDoesNotThrow(() ->peer1 = new MeccanismoAsta(1, "127.0.0.1", new MessageListenerImpl(1)));
+        assertDoesNotThrow(() ->peer2 = new MeccanismoAsta(2, "127.0.0.1", new MessageListenerImpl(2)));
+        assertDoesNotThrow(() ->peer3 = new MeccanismoAsta(3, "127.0.0.1", new MessageListenerImpl(3)));
 
-        }
-        peer0 = new MeccanismoAsta(0, "127.0.0.1", new MessageListenerImpl(0));
-        peer1 = new MeccanismoAsta(1, "127.0.0.1", new MessageListenerImpl(1));
-        peer2 = new MeccanismoAsta(2, "127.0.0.1", new MessageListenerImpl(2));
-        peer3 = new MeccanismoAsta(3, "127.0.0.1", new MessageListenerImpl(3));
+        assertThrows(Exception.class, () -> peer0 = new MeccanismoAsta(0, "127.0.0.5", new MessageListenerImpl(0)));
     }
+
     @Test
-    @Order(1)
-    @Disabled
-    void testCaseCreateAuction(TestInfo testInfo) throws ParseException {
+    //@Order (1)
+
+    void testCaseCreateAuction() {
         /*
         DateFormat formatoData = DateFormat.getDateInstance(DateFormat.SHORT, Locale.ITALY);
         formatoData.setLenient(false);
@@ -62,9 +51,9 @@ public class JunitTestAuction {
         assertFalse(peer1.createAuction("Sedia", dataErrata , 20.0, "in ottimo stato"));
     }
     @Test
-    @Order(2)
-    @Disabled
-    void testCaseRemoveAuction(TestInfo testInfo) throws ParseException {
+    //@Order(2)
+    //@Disabled
+    void testCaseRemoveAuction() {
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
         Date dataCorretta = new Date(milliseconds + unGiorno);
@@ -76,16 +65,16 @@ public class JunitTestAuction {
         assertTrue(peer1.removeAuction("Anello"));
     }
     @Test
-    @Order(3)
-    @Disabled
-    void testCaseUpdateAuction(TestInfo testInfo) throws Exception {
+    //@Order(3)
+    //@Disabled
+    void testCaseUpdateAuction() throws Exception {
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
         Date dataCorretta = new Date(milliseconds + unGiorno);
         //il primo peer crea un'asta
-        assertTrue(peer1.createAuction("Anello", dataCorretta , 50.0, "mai indossato"));
+        assertTrue(peer1.createAuction("Bracciale", dataCorretta , 50.0, "mai indossato"));
 
-        Asta a = peer1.globalSearch("Anello");
+        Asta a = peer1.globalSearch("Bracciale");
         System.out.println("Attualmente la riserva è di: " + a.getRiserva());
         a.setRiserva(20.0);
 
@@ -93,32 +82,32 @@ public class JunitTestAuction {
         assertFalse(peer2.updateAuction(a));
         assertTrue(peer1.updateAuction(a));
 
-        Asta b = peer1.globalSearch("Anello");
+        Asta b = peer1.globalSearch("Bracciale");
         System.out.println("Ora la riserva è di: " + b.getRiserva());
     }
     @Test
-    @Order(1)
-
-    void testCaseFollowUnfollowAuction(TestInfo testInfo) throws Exception {
+    //@Order(4)
+    //@Disabled
+    void testCaseFollowUnfollowAuction() throws Exception {
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
         Date dataCorretta = new Date(milliseconds + unGiorno);
         //il primo peer crea un'asta
-        assertTrue(peer1.createAuction("Anello", dataCorretta , 50.0, "mai indossato"));
+        assertTrue(peer1.createAuction("Collana", dataCorretta , 50.0, "mai indossato"));
         //il secondo peer segue l'asta per ricevere le info sugli aggiornamenti
-        assertTrue(peer2.followAuction("Anello"));
+        assertTrue(peer2.followAuction("Collana"));
 
         //aggiorna l'asta con i nuovi valori e fai arrivare al secondo peer le info
-        Asta a = peer1.globalSearch("Anello");
+        Asta a = peer1.globalSearch("Collana");
         a.setRiserva(20.0);
         a.setDescription("mai indossato, spedizione inclusa");
 
         assertTrue(peer1.updateAuction(a));
 
         //il secondo peer esegue l'unfollow per non ricevere i successivi aggiornamenti
-        assertTrue(peer2.unfollowAuction("Anello"));
+        assertTrue(peer2.unfollowAuction("Collana"));
         //effettuaimo un altro aggiornamento e notiamo che al secondo peer non arriva il messaggio
-        Asta b = peer1.globalSearch("Anello");
+        Asta b = peer1.globalSearch("Collana");
         b.setRiserva(15.0);
         b.setDescription("mai indossato, spedizione a carico del cliente");
 
@@ -126,7 +115,13 @@ public class JunitTestAuction {
     }
 
 
-
+    @AfterAll
+    static void leaveNetwork() {
+        assertTrue(peer0.leaveNetwork());
+        assertTrue(peer1.leaveNetwork());
+        assertTrue(peer2.leaveNetwork());
+        assertTrue(peer3.leaveNetwork());
+    }
 /*
     @Test
     void testCasePlaceAbid(TestInfo testInfo){

@@ -12,21 +12,8 @@ public class mainClass {
     private static int id;
 
     public static void main(String[] args){
-        class Listener implements MessageListener{
-            int peerId;
-
-            public Listener(int peerId)
-            {
-                this.peerId=peerId;
-
-            }
-            public Object parseMessage(Object obj) {
-                System.out.println("\nID:"+peerId+" (Aggiornamento) "+obj+"\n\n");
-                return "success";
-            }
-        }
         try{
-            MeccanismoAsta peer = new MeccanismoAsta(id, master,  new Listener(id));
+            MeccanismoAsta peer = new MeccanismoAsta(id, master,  new MessageListenerImpl(id));
             System.out.println("\nAvvio del peer con id: "+id+ " e master node: " +master+ "\n");
 
             while(true){
@@ -35,7 +22,7 @@ public class mainClass {
                 System.out.println("(1) - CREA UN'ASTA\n");
                 System.out.println("(2) - ELIMINA ASTA\n");
                 System.out.println("(3) - SEGUI UN'ASTA\n");
-                System.out.println("(4) - ABBANDONA UN'ASTA\n");
+                System.out.println("(4) - SMETTI DI SEGUIRE UN'ASTA\n");
                 System.out.println("(5) - FAI UNA PUNTATA\n");
                 System.out.println("(6) - ESCI\n");
                 int menu=  Integer.parseInt(br.readLine());
@@ -109,9 +96,8 @@ public class mainClass {
                 }
             }
         } catch(Exception e) {
-            System.out.println(e);
+            e.printStackTrace();
             System.exit(1);
         }
-        return;
     }
 }
