@@ -6,7 +6,7 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.Objects;
 
-public class Asta implements Serializable {
+public class Auction implements Serializable {
     private static final long serialVersionUID = 1L;
     private String name, description;
     private Date endTime;
@@ -15,10 +15,11 @@ public class Asta implements Serializable {
     private Bid offertaPrec;    //prezzo dell'offerta precedente, pagato dal vincitore
     private Status status;      //enumerazione dello stato dell'asta
     private PeerAddress owner;  //indirizzo di contatto del creatore dell'asta.
+    private PeerAddress winner; //indirizzo del vincitore
     private boolean oneTimeClose;
 
 
-    public Asta(String name, String description, Date endTime, double minPrice, PeerAddress owner) {
+    public Auction(String name, String description, Date endTime, double minPrice, PeerAddress owner) {
         this.name = name;
         this.description = description;
         this.endTime = endTime;
@@ -26,6 +27,7 @@ public class Asta implements Serializable {
         this.status = Status.aperta;
         this.owner = owner;
         oneTimeClose = false;
+        winner=null;
     }
 
     //chiude l'asta se è scaduto il tempo
@@ -114,9 +116,17 @@ public class Asta implements Serializable {
         return owner;
     }
 
+    public PeerAddress getWinner() {
+        return winner;
+    }
+
+    public void setWinner(PeerAddress winner) {
+        this.winner = winner;
+    }
+
     @Override
     public String toString() {
-        return "Asta{" +
+        return "Auction{" +
                 "nome= '" + name + '\'' +
                 ", descrizione= '" + description + '\'' +
                 ", Termine= " + endTime +
@@ -131,7 +141,7 @@ public class Asta implements Serializable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Asta asta = (Asta) o;
+        Auction asta = (Auction) o;
         return Double.compare(asta.riserva, riserva) == 0 && name.equals(asta.name) &&
                 Objects.equals(description, asta.description) && endTime.equals(asta.endTime) &&
                 Objects.equals(offertaAtt, asta.offertaAtt) && Objects.equals(offertaPrec, asta.offertaPrec) &&

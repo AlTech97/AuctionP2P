@@ -7,18 +7,18 @@ import java.io.Serializable;
 
 public class Message implements Serializable {
     public enum MessageType{
-        update,         //se il messaggio è di update conterrà un oggetto Asta con le info aggiornate
+        update,         //se il messaggio è di update conterrà un oggetto Auction con le info aggiornate
         bid,            //se il messaggio è un offerta conterrà un oggetto Bid con le info sulla puntata
         victory         //se il messaggio è di vittoria significa che chi lo riceve otterrà un testo con le congratulazioni
     }
 
-    private Asta asta;
+    private Auction asta;
     private Bid bid;
     private String text;
     private MessageType type;
     private PeerAddress sender;
 
-    public Message(Asta asta, PeerAddress sender) {
+    public Message(Auction asta, PeerAddress sender) {
         this.asta = asta;
         this.type = MessageType.update;
         this.sender = sender;
@@ -42,11 +42,11 @@ public class Message implements Serializable {
         this.asta = null;
     }
 
-    public Asta getAsta() {
+    public Auction getAsta() {
         return asta;
     }
 
-    public void setAsta(Asta asta) {
+    public void setAsta(Auction asta) {
         this.asta = asta;
     }
 

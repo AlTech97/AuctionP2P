@@ -1,5 +1,5 @@
 package pack;
 
-public interface MessageListener {
+public interface MessageListenerInterface {
     public Object parseMessage(Object obj);
 }

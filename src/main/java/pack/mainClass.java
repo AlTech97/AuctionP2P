@@ -1,24 +1,32 @@
 package pack;
 
+import org.kohsuke.args4j.Option;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.text.DateFormat;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
 public class mainClass {
+    @Option(name="-m", aliases="--masterip", usage="the master peer ip address", required=true)
     private static String master;
+    @Option(name="-id", aliases="--identifierpeer", usage="the unique identifier for this peer", required=true)
     private static int id;
+    private static AuctionMechanism peer;
 
     public static void main(String[] args){
         try{
-            MeccanismoAsta peer = new MeccanismoAsta(id, master,  new MessageListenerImpl(id));
+
+            peer = new AuctionMechanism(id, master);
             System.out.println("\nAvvio del peer con id: "+id+ " e master node: " +master+ "\n");
 
             while(true){
                 BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
                 System.out.println("MENU: Digita un numero per effettuare l'operazione\n");
+                System.out.println("(0) - MOSTRA TUTTE LE ASTE APERTE\n");
                 System.out.println("(1) - CREA UN'ASTA\n");
                 System.out.println("(2) - ELIMINA ASTA\n");
                 System.out.println("(3) - SEGUI UN'ASTA\n");
@@ -28,6 +36,12 @@ public class mainClass {
                 int menu=  Integer.parseInt(br.readLine());
                 String nome;        //nome dell'asta su cui operare
                 switch(menu){
+                    case 0:
+                        ArrayList<Auction> aste = peer.getOpenAuctions();
+                        for(Auction a : aste){
+                            System.out.println(a+"\n");
+                        }
+                        break;
                     case 1:
                         System.out.println("\nInserisci il nome dell'asta che vuoi creare: \n");
                         nome = br.readLine();
@@ -42,9 +56,9 @@ public class mainClass {
                             Date data = formatoData.parse(br.readLine());
 
                             if(peer.createAuction(nome, data, prezzo, descrizione))
-                                System.out.println("Asta creata con successo\n");
+                                System.out.println("Auction creata con successo\n");
                             else
-                                System.out.println("Impossibile creare un asta con questo nome\n");
+                                System.out.println("Errore durante la creazione dell'asta\n");
 
                         }catch (ParseException e) {
                             System.out.println("Formato data non valido.\n");
@@ -56,15 +70,15 @@ public class mainClass {
                         if(peer.removeAuction(nome))
                             System.out.println("Asta eliminata con successo\n");
                         else
-                            System.out.println("Asta inesistente\n");
+                            System.out.println("Errore durante l'eliminazione dell'asta\n");
                         break;
                     case 3: //follow dell'asta
-                        System.out.println("Inserisci il nome dell'asta da cui vuoi uscire: \n");
+                        System.out.println("Inserisci il nome dell'asta che vuoi seguire: \n");
                         nome = br.readLine();
                         if(peer.followAuction(nome))
                             System.out.println("Ora segui l'asta indicata\n");
                         else
-                            System.out.println("L'asta indicata è già tra quelle seguite\n");
+                            System.out.println("Operazione non riuscita\n");
                         break;
                     case 4: //unfollow dell'asta
                         System.out.println("Inserisci il nome dell'asta da cui vuoi uscire: \n");
@@ -72,7 +86,7 @@ public class mainClass {
                         if(peer.unfollowAuction(nome))
                             System.out.println("Hai abbandonato l'asta\n");
                         else
-                            System.out.println("Non segui l'asta che hai indicato\n");
+                            System.out.println("Operazione non riuscita\n");
                         break;
                     case 5: //fai una puntata
                         System.out.println("Inserisci il nome dell'asta su cui vuoi puntare: \n");
@@ -97,7 +111,6 @@ public class mainClass {
             }
         } catch(Exception e) {
             e.printStackTrace();
-            System.exit(1);
         }
     }
 }
