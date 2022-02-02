@@ -28,6 +28,8 @@ public class Auction implements Serializable {
         this.owner = owner;
         oneTimeClose = false;
         winner=null;
+        offertaAtt = null;
+        offertaPrec = null;
     }
 
     //chiude l'asta se è scaduto il tempo
@@ -131,8 +133,8 @@ public class Auction implements Serializable {
                 ", descrizione= '" + description + '\'' +
                 ", Termine= " + endTime +
                 ", Prezzo di riserva= " + riserva +
-                ", Offerta attuale= " + offertaAtt +
-                ", Offerta Precedente= " + offertaPrec +
+                ", Offerta attuale= " + offertaAtt.getAmount() +
+                ", Offerta Precedente= " + offertaPrec.getAmount() +
                 ", stato= " + status +
                 '}';
     }

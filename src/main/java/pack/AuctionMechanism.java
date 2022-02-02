@@ -4,6 +4,7 @@ import java.net.InetAddress;
 import java.util.*;
 
 import net.tomp2p.dht.*;
+import net.tomp2p.futures.BaseFutureAdapter;
 import net.tomp2p.futures.FutureBootstrap;
 import net.tomp2p.futures.FutureDirect;
 import net.tomp2p.p2p.Peer;
@@ -29,34 +30,58 @@ public class AuctionMechanism implements AuctionMechanismInterface {
         @Override
         public Object parseMessage(Object obj) {
             Message msg = (Message) obj;
-            if(msg.getType().equals(Message.MessageType.update)){
-                System.out.println("ID: " +peerid+") (Aggiornamento) "+msg.getAsta().toString());
+            if(msg.getType().equals(Message.MessageType.feed)){
+                    System.out.println("ID: " +peerid+") (Aggiornamento) "+msg.getAsta().toString());
                 return "success";
             }
             else if (msg.getType().equals(Message.MessageType.victory)){
                 System.out.println("ID: " +peerid+") (Vittoria) "+ msg.getText());
                 return "success";
             }
-            else { //messaggio di bid ricevuto da un peer che vuole fare un'offerta sulla mia asta.
+            //messaggio di bid ricevuto da un peer che vuole fare un'offerta sulla mia asta.
+            else if (msg.getType().equals(Message.MessageType.bid)) {
                 Bid offerta = msg.getBid();
                 Auction asta= localSearch(offerta.getAuctionName());
                 if(asta!=null){
                     if(offerta.getAmount() > asta.getRiserva()){
-                        if(offerta.getAmount() > asta.getOffertaAtt().getAmount()){
+                        if(asta.getOffertaAtt()==null){//prima offerta in assoluto ricevuta
+                            asta.setOffertaAtt(offerta);
+                            updateAuction(asta);
+                            return "success";
+                        }
+                        //qualsiasi offerta che abbia un valore maggiore di tutte le altre
+                        else if(offerta.getAmount() > asta.getOffertaAtt().getAmount()){
                             asta.setOffertaPrec(asta.getOffertaAtt());
                             asta.setOffertaAtt(offerta);
                             updateAuction(asta);
                             return "success";
                         }
-                        else if(offerta.getAmount() > asta.getOffertaPrec().getAmount()){
+                        //seconda offerta in assoluto ricevuta (== null) che non supera la prima in valore
+                        //qualsiasi offerta che abbia un valore minore del primo e maggiore del secondo
+                        else if(asta.getOffertaPrec()==null || offerta.getAmount() > asta.getOffertaPrec().getAmount()){
                             asta.setOffertaPrec(offerta);
                             updateAuction(asta);
                             return "success";
                         }
                     }
                 }
-                return "failure";
             }
+            //sono l'owner di un asta e quest'ultima si è chiusa, aggiorno la dht con l'oggetto aggiornato
+            else if(msg.getType().equals(Message.MessageType.dhtUpdate)){
+                try {
+                    Auction update = msg.getAsta();
+                    if (update == null)
+                        throw new Exception("Errore nella ricezione del messaggio di update\n");
+                    else{
+                        //aggiorna la dht e invia un feed a tutti i followers
+                        updateAuction(update);
+                        return "success";
+                    }
+                }catch(Exception e){
+                    e.printStackTrace();
+                }
+            }
+            return "failure";
         }
     }
 
@@ -225,10 +250,12 @@ public class AuctionMechanism implements AuctionMechanismInterface {
      * @return true if the update is successful, false otherwise
      */
     @Override
+    @SuppressWarnings("unchecked")
     public boolean updateAuction(Auction _auction){
         String _auction_name = _auction.getName();
         try{
-            if(localSearch(_auction_name) == null)
+            Auction myAuction = localSearch(_auction_name);
+            if( myAuction == null)
                 throw new Exception("Solo il proprietario può aggiornare l'asta\n");
             else {
                 ArrayList<String> lista = getEveryAuctionNames();
@@ -236,21 +263,30 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                     throw new Exception("Auction non presente in lista\n");
                 else {
                     Auction a = globalSearch(_auction_name);
-                    if (a != null) {
-                        if (checkAuction(_auction_name).equals("chiusa"))
-                            throw new Exception("L'asta è chiusa, non è possibile procedere con la modifica\n");
+                    if (a == null)
+                        throw new Exception("L'oggetto dell'asta da aggiornare non è stato trovato\n");
+                    else{
+                        //controllo lo stato attuale dell'asta (controlla anche se è scaduto il tempo)
+                        String status = checkAuction(_auction_name);
+                        if(status == null)
+                            throw new Exception("Stato dell'asta non trovato\n");
                         else {
                             FuturePut future = dht.put(Number160.createHash(_auction_name))
-                                    .data(new Data(_auction)).start().awaitUninterruptibly();
+                                    .data(new Data(_auction)).start();
+                            future.addListener(new BaseFutureAdapter<FuturePut>() {
+                                @Override
+                                public void operationComplete(FuturePut future){ }
+                            }).awaitListenersUninterruptibly();
                             if (!future.isSuccess())
                                 throw new Exception("Errore nell'aggiornamento dell'asta\n");
                             else {
                                 //aggiorna la lista delle aste che ho creato e invia il messaggio di update ai followers
-                                asteCreate.remove(a);
+                                asteCreate.remove(myAuction);
                                 asteCreate.add(_auction);
                                 sendUpdateMessage(_auction);
                                 return true;
                             }
+
                         }
                     }
                 }
@@ -265,17 +301,20 @@ public class AuctionMechanism implements AuctionMechanismInterface {
     private void sendUpdateMessage(Auction toSend){
         String _auction_name = toSend.getName();
         try {
-            FutureGet futureGet = dht.get(Number160.createHash(_auction_name + "Followers"))
-                    .start().awaitUninterruptibly();
+            FutureGet futureGet = dht.get(Number160.createHash(_auction_name + "Followers")).start();
+            futureGet.addListener(new BaseFutureAdapter<FutureGet>() {
+                @Override
+                public void operationComplete(FutureGet future){ }
+            }).awaitListenersUninterruptibly();
             if (!futureGet.isSuccess())
                 throw new Exception("Errore nel prelievo della lista dei followers dell'asta\n");
             else {
                 HashSet<PeerAddress> peers_following = (HashSet<PeerAddress>)
                         futureGet.dataMap().values().iterator().next().object();
-                Message msg = new Message(toSend, peer.peerAddress());
+                Message msg = new Message(toSend, peer.peerAddress(), Message.MessageType.feed);
                 for (PeerAddress peer : peers_following) {
-                    FutureDirect fd = dht.peer().sendDirect(peer).object(msg).start().awaitUninterruptibly();
-                    if(!fd.isSuccess())
+                    FutureDirect fd = dht.peer().sendDirect(peer).object(msg).start().awaitListenersUninterruptibly();
+                    if(fd.isFailed())
                         throw new Exception("Errore durante l'invio del messaggio d'aggiornamento\n");
                 }
             }
@@ -396,16 +435,24 @@ public class AuctionMechanism implements AuctionMechanismInterface {
     private void declaresTheWinner(Auction _auction) throws Exception {
         Message msg = new Message("Complimenti, hai vinto l'asta \"" + _auction.getName()
                 + "\". Il prezzo con cui ti sei aggiudicato il prodotto è: "+ _auction.getOffertaPrec(), peer.peerAddress());
-        PeerAddress address = _auction.getOffertaAtt().getOwner();
-        FutureDirect fd = dht.peer().sendDirect(address).object(msg).start().awaitUninterruptibly();
-        if(!fd.isSuccess())
+        PeerAddress winnerAddress = _auction.getOffertaAtt().getOwner();
+        FutureDirect fd = dht.peer().sendDirect(winnerAddress).object(msg).start().awaitUninterruptibly();
+        if(fd.isFailed())
             throw new Exception("Errore durante l'invio del messaggio di vittoria\n");
 
         //aggiorno l'oggetto dell'asta includendo l'indirizzo del vincitore
-        _auction.setWinner(address);
+        _auction.setWinner(winnerAddress);
 
         //invio un messaggio all'owner per fargli aggiornare l'oggetto e avvisare i followers che l'asta si è conclusa
-
+        if(_auction.getOwner() != peer.peerAddress()){
+            Message msg2 = new Message(_auction, peer.peerAddress(), Message.MessageType.dhtUpdate);
+            FutureDirect fd2 = dht.peer().sendDirect(_auction.getOwner()).object(msg2).start().awaitUninterruptibly();
+            if(fd2.isFailed())
+                throw new Exception("Errore durante l'invio del messaggio di terminazione dell'asta all'owner\n");
+        }
+        else{   //se sono l'owner aggiorna direttamente la dht
+            updateAuction(_auction);
+        }
     }
 
     /**
@@ -421,14 +468,14 @@ public class AuctionMechanism implements AuctionMechanismInterface {
             if(localSearch(_auction_name) != null)
                 throw new Exception("Non è possibile puntare su una propria asta\n");
             else{
-                //controlla lo stato dell'asta
+                //controlla lo stato dell'asta e la chiude se è scaduto il tempo
                 String stato = checkAuction(_auction_name);
                 if(stato!= null) {
                     if (stato.equals(Status.chiusa.toString())) {
-                        throw new Exception("L'asta è chiusa, non puoi puntarci\n");
+                        throw new Exception("L'asta è chiusa, non è possibile effettuare la puntata\n");
                     }
                     else {
-                        //ottieni l'oggetto dell'asta
+                        //ottieni l'oggetto dell'asta, non lancia eccezioni siccome globalSearch già le contiene
                         Auction asta = globalSearch(_auction_name);
                         if (asta != null) {
                             //controlla la validità dell'offerta
@@ -440,7 +487,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                                 Message msg = new Message(puntata,peer.peerAddress());
                                 FutureDirect fd = dht.peer().sendDirect(asta.getOwner()).object(msg)
                                         .start().awaitUninterruptibly();
-                                if(!fd.isSuccess())
+                                if(fd.isFailed())
                                     throw new Exception("Errore durante l'invio del messaggio della puntata\n");
                             }
                         }
@@ -470,7 +517,11 @@ public class AuctionMechanism implements AuctionMechanismInterface {
     @Override
     public Auction globalSearch(String _auction_name){
         try {
-        FutureGet fg = this.dht.get(Number160.createHash(_auction_name)).getLatest().start().awaitUninterruptibly();
+        FutureGet fg = this.dht.get(Number160.createHash(_auction_name)).getLatest().start();
+        fg.addListener(new BaseFutureAdapter<FutureGet>() {
+            @Override
+            public void operationComplete(FutureGet future) {}
+        }).awaitListenersUninterruptibly();
         if (fg.isSuccess() && !fg.isEmpty())
                 return (Auction) fg.data().object();
         else
@@ -489,7 +540,11 @@ public class AuctionMechanism implements AuctionMechanismInterface {
     @SuppressWarnings("unchecked")
     public ArrayList<String> getEveryAuctionNames(){
         try{
-            FutureGet fg = this.dht.get(Number160.createHash("auctionIndex")).getLatest().start().awaitUninterruptibly();
+            FutureGet fg = this.dht.get(Number160.createHash("auctionIndex")).getLatest().start();
+            fg.addListener(new BaseFutureAdapter<FutureGet>() {
+                @Override
+                public void operationComplete(FutureGet future){}
+            }).awaitListenersUninterruptibly();
             if (fg.isSuccess() && !fg.isEmpty())
                 return (ArrayList<String>) fg.data().object();
         } catch (Exception e) {

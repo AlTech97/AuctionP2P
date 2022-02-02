@@ -24,8 +24,8 @@ public class JunitTestAuction {
     }
 
     @Test
-    //@Order (1)
-    @Disabled
+    @Order (1)
+    //@Disabled
     void testCaseCreateAuction() {
         //data di oggi
         long milliseconds = System.currentTimeMillis();
@@ -44,8 +44,8 @@ public class JunitTestAuction {
         assertFalse(peer1.createAuction("Sedia", dataErrata , 20.0, "in ottimo stato"));
     }
     @Test
-    //@Order(2)
-    @Disabled
+    @Order(2)
+    //@Disabled
     void testCaseRemoveAuction() {
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
@@ -58,9 +58,9 @@ public class JunitTestAuction {
         assertTrue(peer1.removeAuction("Anello"));
     }
     @Test
-    //@Order(3)
-    @Disabled
-    void testCaseUpdateAuction() throws Exception {
+    @Order(3)
+    //@Disabled
+    void testCaseUpdateAuction(){
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
         Date dataCorretta = new Date(milliseconds + unGiorno);
@@ -79,9 +79,9 @@ public class JunitTestAuction {
         System.out.println("Ora la riserva è di: " + b.getRiserva());
     }
     @Test
-    //@Order(4)
-    @Disabled
-    void testCaseFollowUnfollowAuction() throws Exception {
+    @Order(4)
+    //@Disabled
+    void testCaseFollowUnfollowAuction(){
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
         Date dataCorretta = new Date(milliseconds + unGiorno);
@@ -108,13 +108,13 @@ public class JunitTestAuction {
     }
 
     @Test
-    //@Order(5)
+    @Order(5)
     //@Disabled
-    void testCasePlaceAbid(TestInfo testInfo){
+    void testCasePlaceAbid(){
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
         Date dataCorretta = new Date(milliseconds + unGiorno);
-
+        //creo un asta su cui puntare
         assertTrue(peer1.createAuction("Computer", dataCorretta , 250.0, "nuovo"));
         //l'owner fa un offerta sulla propria asta
         assertNull(peer1.placeAbid("Computer", 270.0));
@@ -123,8 +123,9 @@ public class JunitTestAuction {
         //lo stesso peer rifà l'offerta corretta
         assertNotNull(peer2.placeAbid("Computer", 270.0));
 
+        //testo il meccanismo di follow per ricevere gli aggiornamenti
         assertTrue(peer2.followAuction("Computer"));
-        //testo il valore restituito da una bid
+        //testo il valore restituito da un'operazioned di bid su un asta aperta
         assertEquals(peer3.placeAbid("Computer", 280.0), Status.aperta.toString());
 
     }
