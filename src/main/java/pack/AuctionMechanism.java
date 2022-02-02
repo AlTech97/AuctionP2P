@@ -43,30 +43,31 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                 Bid offerta = msg.getBid();
                 Auction asta= localSearch(offerta.getAuctionName());
                 if(asta!=null){
-                    if(offerta.getAmount() > asta.getRiserva()){
-                        if(asta.getOffertaAtt()==null){//prima offerta in assoluto ricevuta
+                    if(offerta.getAmount() >= asta.getRiserva()){
+                        if(asta.getOffertaAtt()==null && asta.getOffertaPrec()==null){//prima offerta in assoluto ricevuta
                             asta.setOffertaAtt(offerta);
                             updateAuction(asta);
                             return "success";
                         }
-                        //qualsiasi offerta che abbia un valore maggiore di tutte le altre
-                        else if(offerta.getAmount() > asta.getOffertaAtt().getAmount()){
-                            asta.setOffertaPrec(asta.getOffertaAtt());
-                            asta.setOffertaAtt(offerta);
-                            updateAuction(asta);
-                            return "success";
-                        }
-                        //seconda offerta in assoluto ricevuta (== null) che non supera la prima in valore
-                        //qualsiasi offerta che abbia un valore minore del primo e maggiore del secondo
-                        else if(asta.getOffertaPrec()==null || offerta.getAmount() > asta.getOffertaPrec().getAmount()){
-                            asta.setOffertaPrec(offerta);
-                            updateAuction(asta);
-                            return "success";
+                        else{ //per tutte le offerte dopo la prima
+                            if(offerta.getAmount() > asta.getOffertaAtt().getAmount()){
+                                asta.setOffertaPrec(asta.getOffertaAtt());
+                                asta.setOffertaAtt(offerta);
+                                updateAuction(asta);
+                                return "success";
+                            }
+                            //seconda offerta in assoluto ricevuta (== null) che non supera la prima in valore
+                            //qualsiasi offerta che abbia un valore minore del primo e maggiore del secondo
+                            else if(asta.getOffertaPrec()==null || offerta.getAmount() > asta.getOffertaPrec().getAmount()){
+                                asta.setOffertaPrec(offerta);
+                                updateAuction(asta);
+                                return "success";
+                            }
                         }
                     }
                 }
             }
-            //sono l'owner di un asta e quest'ultima si è chiusa, aggiorno la dht con l'oggetto aggiornato
+            //sono l'owner di un asta e quest'ultima si è chiusa, aggiorno la dht con l'asta aggiornata
             else if(msg.getType().equals(Message.MessageType.dhtUpdate)){
                 try {
                     Auction update = msg.getAsta();
@@ -250,7 +251,6 @@ public class AuctionMechanism implements AuctionMechanismInterface {
      * @return true if the update is successful, false otherwise
      */
     @Override
-    @SuppressWarnings("unchecked")
     public boolean updateAuction(Auction _auction){
         String _auction_name = _auction.getName();
         try{
@@ -277,6 +277,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                                 @Override
                                 public void operationComplete(FuturePut future){ }
                             }).awaitListenersUninterruptibly();
+
                             if (!future.isSuccess())
                                 throw new Exception("Errore nell'aggiornamento dell'asta\n");
                             else {
@@ -312,10 +313,13 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                 HashSet<PeerAddress> peers_following = (HashSet<PeerAddress>)
                         futureGet.dataMap().values().iterator().next().object();
                 Message msg = new Message(toSend, peer.peerAddress(), Message.MessageType.feed);
-                for (PeerAddress peer : peers_following) {
-                    FutureDirect fd = dht.peer().sendDirect(peer).object(msg).start().awaitListenersUninterruptibly();
-                    if(fd.isFailed())
+                for (PeerAddress follower : peers_following) {
+                    FutureDirect fd = dht.peer().sendDirect(follower).object(msg).start().awaitListenersUninterruptibly();
+                    if(fd.isFailed()){
+                        System.out.println(fd.failedReason() +"\n");
                         throw new Exception("Errore durante l'invio del messaggio d'aggiornamento\n");
+                    }
+
                 }
             }
         }catch (Exception e) {
@@ -340,6 +344,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                 else {
                     FutureGet futureGet = dht.get(Number160.createHash(_auction_name + "Followers"))
                             .start().awaitUninterruptibly();
+
                     if (!futureGet.isSuccess())
                         throw new Exception("Errore nel prelievo della lista dei followers dell'asta\n");
                     else {
@@ -421,7 +426,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                         throw new Exception("Errore nell'aggiornamento dell'oggetto dell'asta\n");
                     else{
                         //chiama il metodo per decretare il vincitore
-                        declaresTheWinner(asta);
+                        declareTheWinner(asta);
                     }
                 }
                 return asta.getStatus().toString();
@@ -432,9 +437,15 @@ public class AuctionMechanism implements AuctionMechanismInterface {
         return null;
     }
 
-    private void declaresTheWinner(Auction _auction) throws Exception {
+    private void declareTheWinner(Auction _auction) throws Exception {
+        String prezzoFinale ;
+        if(_auction.getOffertaPrec()==null)
+            prezzoFinale = String.valueOf(_auction.getOffertaAtt().getAmount());
+        else
+            prezzoFinale = String.valueOf(_auction.getOffertaPrec().getAmount());
+
         Message msg = new Message("Complimenti, hai vinto l'asta \"" + _auction.getName()
-                + "\". Il prezzo con cui ti sei aggiudicato il prodotto è: "+ _auction.getOffertaPrec(), peer.peerAddress());
+                + "\". Il prezzo con cui ti sei aggiudicato il prodotto è: "+ prezzoFinale, peer.peerAddress());
         PeerAddress winnerAddress = _auction.getOffertaAtt().getOwner();
         FutureDirect fd = dht.peer().sendDirect(winnerAddress).object(msg).start().awaitUninterruptibly();
         if(fd.isFailed())
@@ -501,7 +512,11 @@ public class AuctionMechanism implements AuctionMechanismInterface {
        return null;
     }
 
-    //cerca un asta tra quelle che ho creato e restituiscila se esiste
+    /**
+     * Search for an auction among those created by the peer
+     * @param _auction_name a String, the name of the auction
+     * @return the Auction object found, null otherwise
+     */
     public Auction localSearch (String _auction_name){
         for(Auction a: asteCreate){
             if(a.getName().equals(_auction_name))
@@ -509,6 +524,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
         }
         return null;
     }
+
     /**
      * Search for an auction among all existing ones
      * @param _auction_name a String, the name of the auction

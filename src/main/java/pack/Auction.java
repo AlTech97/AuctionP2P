@@ -128,13 +128,15 @@ public class Auction implements Serializable {
 
     @Override
     public String toString() {
+        String offerta1 =(offertaAtt==null) ? "null": String.valueOf(offertaAtt.getAmount());
+        String offerta2 = (offertaPrec==null) ? "null" : String.valueOf(offertaPrec.getAmount());
         return "Auction{" +
                 "nome= '" + name + '\'' +
                 ", descrizione= '" + description + '\'' +
                 ", Termine= " + endTime +
                 ", Prezzo di riserva= " + riserva +
-                ", Offerta attuale= " + offertaAtt.getAmount() +
-                ", Offerta Precedente= " + offertaPrec.getAmount() +
+                ", Offerta attuale= " + offerta1 +
+                ", Offerta Precedente= " + offerta2 +
                 ", stato= " + status +
                 '}';
     }

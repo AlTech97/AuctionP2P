@@ -6,6 +6,7 @@ import java.io.Serializable;
 
 
 public class Message implements Serializable {
+
     public enum MessageType{
         feed,           //se il messaggio è un feed, conterrà un oggetto Auction con le info aggiornate da inviare ai followers
         bid,            //se il messaggio è un offerta conterrà un oggetto Bid con le info sulla puntata
@@ -51,7 +52,7 @@ public class Message implements Serializable {
 
     /**
      * Constructor for victory message, intended to the highest bidder
-     * @param text a String, the text of a congratulation message from the owner of auction
+     * @param text a String, the text of a congratulation message
      * @param sender a PeerAddress, the address of the sender
      */
     public Message(String text, PeerAddress sender) {

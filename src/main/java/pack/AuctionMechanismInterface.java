@@ -59,10 +59,11 @@ public interface AuctionMechanismInterface {
     public boolean unfollowAuction(String _auction_name);
 
     /**
-     * leave the P2P network and unsubscribe from the auctions
-     * @return true if unsubscribe from all the auctions followed is done correctly, false otherwise
+     * Search for an auction among those created by the peer
+     * @param _auction_name a String, the name of the auction
+     * @return the Auction object found, null otherwise
      */
-    public boolean leaveNetwork();
+    public Auction localSearch (String _auction_name);
 
     /**
      * Search for an auction among all existing ones
@@ -82,5 +83,11 @@ public interface AuctionMechanismInterface {
      * @return an ArrayList that contains all open auctions
      */
     public ArrayList<Auction> getOpenAuctions();
+
+    /**
+     * Leave the P2P network and unsubscribe from the auctions
+     * @return true if unsubscribe from all the auctions followed is done correctly, false otherwise
+     */
+    public boolean leaveNetwork();
 
 }

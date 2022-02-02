@@ -8,7 +8,7 @@ import pack.Status;
 import java.util.Date;
 import static org.junit.jupiter.api.Assertions.*;
 
-//@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 
 public class JunitTestAuction {
     private static AuctionMechanism peer0, peer1, peer2, peer3;
@@ -25,7 +25,7 @@ public class JunitTestAuction {
 
     @Test
     @Order (1)
-    //@Disabled
+    @Disabled
     void testCaseCreateAuction() {
         //data di oggi
         long milliseconds = System.currentTimeMillis();
@@ -45,7 +45,7 @@ public class JunitTestAuction {
     }
     @Test
     @Order(2)
-    //@Disabled
+    @Disabled
     void testCaseRemoveAuction() {
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
@@ -59,7 +59,7 @@ public class JunitTestAuction {
     }
     @Test
     @Order(3)
-    //@Disabled
+    @Disabled
     void testCaseUpdateAuction(){
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
@@ -80,7 +80,7 @@ public class JunitTestAuction {
     }
     @Test
     @Order(4)
-    //@Disabled
+    @Disabled
     void testCaseFollowUnfollowAuction(){
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
@@ -109,7 +109,7 @@ public class JunitTestAuction {
 
     @Test
     @Order(5)
-    //@Disabled
+    @Disabled
     void testCasePlaceAbid(){
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
@@ -128,6 +128,37 @@ public class JunitTestAuction {
         //testo il valore restituito da un'operazioned di bid su un asta aperta
         assertEquals(peer3.placeAbid("Computer", 280.0), Status.aperta.toString());
 
+    }
+
+    @Test
+    @Order(6)
+    //@Disabled
+    void testCaseDeclareTheWinner(){
+        long milliseconds = System.currentTimeMillis();
+        long unGiorno = 86400000;
+        Date dataCorretta = new Date(milliseconds + unGiorno);
+        //creo un asta su cui puntare
+        assertTrue(peer1.createAuction("Quadro", dataCorretta , 300.0
+                , "Un quadro d'autore in arte moderna"));
+        //un peer decide di seguire gli aggiornamenti dell'asta
+        assertTrue(peer3.followAuction("Quadro"));
+
+        //due peer effettuano una puntata
+        assertEquals(peer3.placeAbid("Quadro", 320.0), Status.aperta.toString());
+        assertEquals(peer2.placeAbid("Quadro", 350.0), Status.aperta.toString());
+
+
+
+        //simuliamo lo scadere del tempo dell'asta
+
+        Auction a = peer1.localSearch("Quadro");
+        Date dataIeri = new Date(milliseconds - unGiorno);
+        a.setEndTime(dataIeri);
+        assertTrue(peer1.updateAuction(a));
+
+        //una qualsiasi operazione si faccia su quest'asta implicherà il controllo dello stato e l'avvio delle procedure
+        //di dichiarazione del vincitore dell'asta (il peer 2)
+        assertNotEquals(peer3.placeAbid("Quadro", 320.0), Status.aperta.toString());
     }
 
     @AfterAll
