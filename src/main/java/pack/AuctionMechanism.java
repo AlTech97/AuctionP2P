@@ -140,7 +140,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                         else{
                             //aggiungi il nome dell'asta nella lista globale
                             nomiAste.add(_auction_name);
-                            FuturePut future2 =  dht.put(Number160.createHash("auctionIndex"))
+                            FuturePut future2 =  dht.put(Number160.createHash("auctionList"))
                                     .data(new Data(nomiAste)).start().awaitUninterruptibly();
                             if(!future2.isSuccess()) {
                                 //se l'aggiunta in lista non ha successo elimina l'oggetto Auction appena aggiunto alla DHT
@@ -167,7 +167,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                                         asteCreate.remove(nuova);
                                         //elimina anche il nome dell'asta dalla lista globale
                                         nomiAste.remove(_auction_name);
-                                        dht.put(Number160.createHash("auctionIndex"))
+                                        dht.put(Number160.createHash("auctionList"))
                                                 .data(new Data(nomiAste)).start().awaitUninterruptibly();
                                         throw new Exception("Errore durante la creazione della lista dei followers dell'asta\n");
                                     }
@@ -204,7 +204,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                     if (!nomiAste.remove(_auction_name))
                         throw new Exception("L'asta indicata non è in lista\n");
                     else{
-                        FuturePut future = dht.put(Number160.createHash("auctionIndex"))
+                        FuturePut future = dht.put(Number160.createHash("auctionList"))
                                 .data(new Data(nomiAste)).start().awaitUninterruptibly();
                         if (!future.isSuccess())
                             throw new Exception("Errore durante la rimozione del nome dell'asta\n");
@@ -215,7 +215,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                             if (!future2.isSuccess()) {
                                 //riporto la lista allo stato precedente dato che la rimozione dell'asta è fallita
                                 nomiAste.add(_auction_name);
-                                dht.put(Number160.createHash("auctionIndex"))
+                                dht.put(Number160.createHash("auctionList"))
                                         .data(new Data(nomiAste)).start().awaitUninterruptibly();
                                 throw new Exception("Errore durante la rimozione dell'asta\n");
                             } else {
@@ -225,7 +225,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                                     //se fallisce la rimozione della lista dei followers ripristina la lista dei nomi
                                     //e aggiungi di nuovo l'oggetto dell'asta rimosso prima
                                     nomiAste.add(_auction_name);
-                                    dht.put(Number160.createHash("auctionIndex"))
+                                    dht.put(Number160.createHash("auctionList"))
                                             .data(new Data(nomiAste)).start().awaitUninterruptibly();
                                     dht.put(Number160.createHash(_auction_name))
                                             .data(new Data(localSearch(_auction_name))).start().awaitUninterruptibly();
@@ -284,7 +284,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                                 //aggiorna la lista delle aste che ho creato e invia il messaggio di update ai followers
                                 asteCreate.remove(myAuction);
                                 asteCreate.add(_auction);
-                                sendUpdateMessage(_auction);
+                                sendFeedMessage(_auction);
                                 return true;
                             }
 
@@ -299,7 +299,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
     }
 
     @SuppressWarnings("unchecked")
-    private void sendUpdateMessage(Auction toSend){
+    private void sendFeedMessage(Auction toSend){
         String _auction_name = toSend.getName();
         try {
             FutureGet futureGet = dht.get(Number160.createHash(_auction_name + "Followers")).start();
@@ -556,7 +556,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
     @SuppressWarnings("unchecked")
     public ArrayList<String> getEveryAuctionNames(){
         try{
-            FutureGet fg = this.dht.get(Number160.createHash("auctionIndex")).getLatest().start();
+            FutureGet fg = this.dht.get(Number160.createHash("auctionList")).getLatest().start();
             fg.addListener(new BaseFutureAdapter<FutureGet>() {
                 @Override
                 public void operationComplete(FutureGet future){}

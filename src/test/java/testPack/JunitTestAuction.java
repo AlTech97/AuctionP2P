@@ -80,7 +80,7 @@ public class JunitTestAuction {
     }
     @Test
     @Order(4)
-    @Disabled
+    //@Disabled
     void testCaseFollowUnfollowAuction(){
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
@@ -96,6 +96,7 @@ public class JunitTestAuction {
         a.setDescription("mai indossato, spedizione inclusa");
 
         assertTrue(peer1.updateAuction(a));
+        peer3.placeAbid("Collana", 25);
 
         //il secondo peer esegue l'unfollow per non ricevere i successivi aggiornamenti
         assertTrue(peer2.unfollowAuction("Collana"));
@@ -122,9 +123,6 @@ public class JunitTestAuction {
         assertNull(peer2.placeAbid("Computer", 200.0));
         //lo stesso peer rifà l'offerta corretta
         assertNotNull(peer2.placeAbid("Computer", 270.0));
-
-        //testo il meccanismo di follow per ricevere gli aggiornamenti
-        assertTrue(peer2.followAuction("Computer"));
         //testo il valore restituito da un'operazioned di bid su un asta aperta
         assertEquals(peer3.placeAbid("Computer", 280.0), Status.aperta.toString());
 
@@ -132,7 +130,7 @@ public class JunitTestAuction {
 
     @Test
     @Order(6)
-    //@Disabled
+    @Disabled
     void testCaseDeclareTheWinner(){
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
@@ -168,39 +166,5 @@ public class JunitTestAuction {
         assertTrue(peer2.leaveNetwork());
         assertTrue(peer3.leaveNetwork());
     }
-/*
-
-    //TODO to remove it!
-    @Test
-    void testCaseGeneral(TestInfo testInfo){
-
-        try {
-            DateFormat formatoData = DateFormat.getDateInstance(DateFormat.SHORT, Locale.ITALY);
-            formatoData.setLenient(false);
-            Date data = formatoData.parse("27/01/2022");
-            peer1.createAuction("Moneta", data , 3.0, "storica");
-            peer1.placeAbid("Moneta", 5.0);
-            peer2.placeAbid("Moneta", 7.0);
-            peer3.placeAbid("Moneta", 10.0);
-
-            peer1.createAuction("Portafoglio", data , 20.0, "in vera pelle");
-            peer1.placeAbid("Portafoglio", 22.0);
-            peer2.placeAbid("Portafoglio", 24.0);
-            peer3.placeAbid("Portafoglio", 28.0);
-
-
-            peer1.unfollowAuction("Moneta");
-
-            peer2.leaveNetwork();
-
-            peer1.removeAuction("Moneta");
-            System.exit(0);
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
-*/
-
 
 }
