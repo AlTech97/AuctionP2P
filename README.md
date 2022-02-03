@@ -37,7 +37,7 @@ Infine nella classe main viene instanziato un solo oggetto AuctionMechanism cos�
 Il secondo, “testPack”, contiene unicamente la classe JunitTestAuction  per i test unitari che approfondiremo successivamente
 
 
-###Dettagli implementativi
+### Dettagli implementativi
 Tutte le operazioni che descriveremo in questa sezione sono effettuate dai metodi nella classe AuctionMechanism.
 
 Il costruttore della classe permette di inizializzare il peer con id univoco, definire la  DHT e dichiarare un MessageListener inizializzato con il proprio id, utilizzato per  chiamare il metodo contenuto in esso ogni qualvolta il peer riceve un messaggio.
