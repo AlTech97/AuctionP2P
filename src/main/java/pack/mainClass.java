@@ -1,5 +1,6 @@
 package pack;
 
+import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
 import java.io.BufferedReader;
@@ -17,8 +18,10 @@ public class mainClass {
     private static int id;
 
     public static void main(String[] args){
+        mainClass classe = new mainClass();
+        final CmdLineParser parser = new CmdLineParser(classe);
         try{
-
+            parser.parseArgument(args);
             AuctionMechanism peer = new AuctionMechanism(id, master);
             System.out.println("\nAvvio del peer con id: "+id+ " e master node: " +master+ "\n");
 
