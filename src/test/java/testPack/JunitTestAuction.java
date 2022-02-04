@@ -55,6 +55,8 @@ public class JunitTestAuction {
         assertFalse(peer3.removeAuction("Anello"));
         //il proprietario elimina l'asta che ha creato prima
         assertTrue(peer1.removeAuction("Anello"));
+        //tenta di rimuovere un'asta inesistente
+        assertFalse(peer1.removeAuction("Automobile"));
     }
     @Test
     @Order(3)
@@ -73,6 +75,10 @@ public class JunitTestAuction {
         //provo a far fare l'aggiornamento dell'asta ad un peer diverso dal proprietario e poi dal proprietario
         assertFalse(peer2.updateAuction(a));
         assertTrue(peer1.updateAuction(a));
+
+        //provo a far fare l'aggiornamento di un'asta inesistente
+        Auction asta = new Auction("Automobile", "nuova", dataCorretta, 25000.0, peer2.getAddress());
+        assertFalse(peer0.updateAuction(asta));
 
         Auction b = peer1.globalSearch("Bracciale");
         System.out.println("Ora la riserva è di: " + b.getRiserva());
@@ -124,6 +130,8 @@ public class JunitTestAuction {
         assertNotNull(peer2.placeAbid("Computer", 270.0));
         //testo il valore restituito da un'operazioned di bid su un asta aperta
         assertEquals(peer3.placeAbid("Computer", 280.0), Status.aperta.toString());
+
+        assertNull(peer1.placeAbid("Automobile", 10500.0));
 
     }
 

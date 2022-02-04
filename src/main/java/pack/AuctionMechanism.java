@@ -619,5 +619,8 @@ public class AuctionMechanism implements AuctionMechanismInterface {
         return result;
     }
 
+    public PeerAddress getAddress(){
+        return peer.peerAddress();
+    }
 
 }

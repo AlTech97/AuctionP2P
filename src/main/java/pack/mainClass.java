@@ -96,19 +96,22 @@ public class mainClass {
                         double puntata = Double.parseDouble(br.readLine());
 
                         //se la puntata è stata fatta su un asta aperta
-                        if(Status.aperta.toString().compareTo(peer.placeAbid(nome, puntata)) == 0)
-                            System.out.println("Puntata effettuata\n");
-                        else
-                            System.out.println("Puntata non effettuata\n");
+                        String stato = peer.placeAbid(nome, puntata);
+                        if(stato != null) {
+                            if (Status.aperta.toString().compareTo(stato) == 0)
+                                System.out.println("Puntata effettuata\n");
+                            else
+                                System.out.println("Puntata non effettuata\n");
+                        }
                         break;
                     case 6:
                         System.out.println("Inserisci il nome dell'asta di cui vuoi controllare lo stato: \n");
                         nome = br.readLine();
-                        String stato = peer.checkAuction(nome);
-                        if(stato == null)
+                        String status = peer.checkAuction(nome);
+                        if(status == null)
                             System.out.println("Asta inesistente\n");
                         else
-                            System.out.println("l'asta '"+nome+"' è " +stato);
+                            System.out.println("l'asta '"+nome+"' è " +status);
                         break;
                     case 7: //exit
                         peer.leaveNetwork();
