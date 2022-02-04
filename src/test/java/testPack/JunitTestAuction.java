@@ -163,6 +163,77 @@ public class JunitTestAuction {
         assertNotEquals(peer3.placeAbid("Quadro", 320.0), Status.aperta.toString());
     }
 
+    @Test
+    @Order(7)
+    //@Disabled
+    void testCaseCheckAuction(){
+        long milliseconds = System.currentTimeMillis();
+        long unGiorno = 86400000;
+        Date dataCorretta = new Date(milliseconds + unGiorno);
+        assertTrue(peer0.createAuction("Automobile", dataCorretta, 1500.0, "usata"));
+        assertEquals(peer1.checkAuction("Automobile"), Status.aperta.toString());
+        assertNotEquals(peer2.checkAuction("Automobile"), Status.chiusa.toString());
+        assertNull(peer3.checkAuction("Barca"));
+    }
+    @Test
+    @Order(8)
+    //@Disabled
+    void testCaseLocalSearch(){
+        long milliseconds = System.currentTimeMillis();
+        long unGiorno = 86400000;
+        Date dataCorretta = new Date(milliseconds + unGiorno);
+        assertTrue(peer0.createAuction("Barca", dataCorretta, 30000.0, "ristrutturata"));
+        assertNotNull(peer0.localSearch("Barca"));
+        assertNull(peer0.localSearch("Nave"));
+        assertNull(peer1.localSearch("Barca"));
+    }
+
+    @Test
+    @Order(9)
+    //@Disabled
+    void testCaseGlobalSearch(){
+        long milliseconds = System.currentTimeMillis();
+        long unGiorno = 86400000;
+        Date dataCorretta = new Date(milliseconds + unGiorno);
+        assertTrue(peer0.createAuction("Casa", dataCorretta, 100000.0, "ristrutturata"));
+        assertNotNull(peer0.globalSearch("Casa"));
+        assertNotNull(peer2.globalSearch("Casa"));
+        assertNull(peer3.globalSearch("Casa piccola"));
+    }
+
+    @Test
+    @Order(10)
+    //@Disabled
+    void testCaseGetEveryAuctionNames(){
+        long milliseconds = System.currentTimeMillis();
+        long unGiorno = 86400000;
+        Date dataCorretta = new Date(milliseconds + unGiorno);
+        assertTrue(peer0.createAuction("Villa", dataCorretta, 200000.0, "con terrazza sul mare"));
+        assertTrue(peer2.getEveryAuctionNames().contains("Villa"));
+        assertFalse(peer0.getEveryAuctionNames().isEmpty());
+    }
+
+    @Test
+    @Order(11)
+    //@Disabled
+    void testCaseGetOpenAuctions(){
+        long milliseconds = System.currentTimeMillis();
+        long unGiorno = 86400000;
+        Date dataCorretta = new Date(milliseconds + unGiorno);
+        Date dataIeri = new Date(milliseconds - unGiorno);
+        assertTrue(peer0.createAuction("Limousine", dataCorretta, 5000.0, "full optional"));
+        Auction a = peer0.localSearch("Limousine");
+        assertTrue(peer0.getOpenAuctions().contains(a));
+
+        //faccio scadere l'asta
+        a.setEndTime(dataIeri);
+        assertTrue(peer0.updateAuction(a));
+        assertEquals(peer0.checkAuction("Limousine"), Status.chiusa.toString());
+
+        //getOpenAuction non restituirà più una lista contenente l'asta appena chiusa
+        assertFalse(peer0.getOpenAuctions().contains(a));
+    }
+
     @AfterAll
     static void leaveNetwork() {
         assertTrue(peer0.leaveNetwork());

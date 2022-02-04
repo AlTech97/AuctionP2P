@@ -17,7 +17,7 @@ public interface AuctionMechanismInterface {
     /**
      * Checks the status of the auction.
      * @param _auction_name a String, the name of the auction.
-     * @return a String value that is the status of the auction.
+     * @return a String value that is the status of the auction. Null if the auction doesn't exist
      */
     public String checkAuction(String _auction_name);
 

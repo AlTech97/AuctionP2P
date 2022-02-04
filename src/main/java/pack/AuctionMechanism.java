@@ -339,26 +339,29 @@ public class AuctionMechanism implements AuctionMechanismInterface {
             if (asteSeguite.contains(_auction_name))
                 throw new Exception("Segui già quest'asta\n");
             else {
-                if(checkAuction(_auction_name).equals(Status.chiusa.toString()))
-                    throw new Exception("Non è possibile seguire un'asta chiusa\n");
-                else {
-                    FutureGet futureGet = dht.get(Number160.createHash(_auction_name + "Followers"))
-                            .start().awaitUninterruptibly();
-
-                    if (!futureGet.isSuccess())
-                        throw new Exception("Errore nel prelievo della lista dei followers dell'asta\n");
+                String stato = checkAuction(_auction_name);
+                if(stato != null) {
+                    if (stato.equals(Status.chiusa.toString()))
+                        throw new Exception("Non è possibile seguire un'asta chiusa\n");
                     else {
-                        HashSet<PeerAddress> peers_following = (HashSet<PeerAddress>)
-                                futureGet.dataMap().values().iterator().next().object();
-                        peers_following.add(dht.peer().peerAddress());
-                        FuturePut fp = dht.put(Number160.createHash(_auction_name + "Followers")).data(new Data(peers_following))
+                        FutureGet futureGet = dht.get(Number160.createHash(_auction_name + "Followers"))
                                 .start().awaitUninterruptibly();
-                        if (!fp.isSuccess())
-                            throw new Exception("Errore nell'aggiornamento della lista dei followers dell'asta\n");
+
+                        if (!futureGet.isSuccess())
+                            throw new Exception("Errore nel prelievo della lista dei followers dell'asta\n");
                         else {
-                            //aggiungo il nome dell'asta alla lista di quelle seguite
-                            asteSeguite.add(_auction_name);
-                            return true;
+                            HashSet<PeerAddress> peers_following = (HashSet<PeerAddress>)
+                                    futureGet.dataMap().values().iterator().next().object();
+                            peers_following.add(dht.peer().peerAddress());
+                            FuturePut fp = dht.put(Number160.createHash(_auction_name + "Followers")).data(new Data(peers_following))
+                                    .start().awaitUninterruptibly();
+                            if (!fp.isSuccess())
+                                throw new Exception("Errore nell'aggiornamento della lista dei followers dell'asta\n");
+                            else {
+                                //aggiungo il nome dell'asta alla lista di quelle seguite
+                                asteSeguite.add(_auction_name);
+                                return true;
+                            }
                         }
                     }
                 }
@@ -593,7 +596,8 @@ public class AuctionMechanism implements AuctionMechanismInterface {
             else {
                 for(String name : names){
                     Auction a = globalSearch(name);
-                    if(a!=null && checkAuction(name).equals(Status.aperta.toString()))
+                    String stato =checkAuction(name);
+                    if(a!=null && stato!= null && stato.equals(Status.aperta.toString()))
                         result.add(a);
                 }
             }
