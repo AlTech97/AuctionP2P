@@ -9,7 +9,6 @@ import java.util.Date;
 import static org.junit.jupiter.api.Assertions.*;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-
 public class JunitTestAuction {
     private static AuctionMechanism peer0, peer1, peer2, peer3;
 
@@ -25,7 +24,7 @@ public class JunitTestAuction {
 
     @Test
     @Order (1)
-    @Disabled
+    //@Disabled
     void testCaseCreateAuction() {
         //data di oggi
         long milliseconds = System.currentTimeMillis();
@@ -45,7 +44,7 @@ public class JunitTestAuction {
     }
     @Test
     @Order(2)
-    @Disabled
+    //@Disabled
     void testCaseRemoveAuction() {
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
@@ -59,7 +58,7 @@ public class JunitTestAuction {
     }
     @Test
     @Order(3)
-    @Disabled
+    //@Disabled
     void testCaseUpdateAuction(){
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
@@ -110,7 +109,7 @@ public class JunitTestAuction {
 
     @Test
     @Order(5)
-    @Disabled
+    //@Disabled
     void testCasePlaceAbid(){
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
@@ -130,7 +129,7 @@ public class JunitTestAuction {
 
     @Test
     @Order(6)
-    @Disabled
+    //@Disabled
     void testCaseDeclareTheWinner(){
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
@@ -145,10 +144,7 @@ public class JunitTestAuction {
         assertEquals(peer3.placeAbid("Quadro", 320.0), Status.aperta.toString());
         assertEquals(peer2.placeAbid("Quadro", 350.0), Status.aperta.toString());
 
-
-
         //simuliamo lo scadere del tempo dell'asta
-
         Auction a = peer1.localSearch("Quadro");
         Date dataIeri = new Date(milliseconds - unGiorno);
         a.setEndTime(dataIeri);

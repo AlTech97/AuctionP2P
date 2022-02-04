@@ -15,12 +15,11 @@ public class mainClass {
     private static String master;
     @Option(name="-id", aliases="--identifierpeer", usage="the unique identifier for this peer", required=true)
     private static int id;
-    private static AuctionMechanism peer;
 
     public static void main(String[] args){
         try{
 
-            peer = new AuctionMechanism(id, master);
+            AuctionMechanism peer = new AuctionMechanism(id, master);
             System.out.println("\nAvvio del peer con id: "+id+ " e master node: " +master+ "\n");
 
             while(true){
@@ -32,17 +31,19 @@ public class mainClass {
                 System.out.println("(3) - SEGUI UN'ASTA\n");
                 System.out.println("(4) - SMETTI DI SEGUIRE UN'ASTA\n");
                 System.out.println("(5) - FAI UNA PUNTATA\n");
-                System.out.println("(6) - ESCI\n");
+                System.out.println("(6) - VERIFICA LO STATO DI UN'ASTA\n");
+                System.out.println("(7) - ESCI\n");
                 int menu=  Integer.parseInt(br.readLine());
                 String nome;        //nome dell'asta su cui operare
                 switch(menu){
-                    case 0:
+                    case 0: //mostra tutte le aste aperte
                         ArrayList<Auction> aste = peer.getOpenAuctions();
+                        System.out.println("Ecco tutte le aste attualmente attive:\n");
                         for(Auction a : aste){
                             System.out.println(a+"\n");
                         }
                         break;
-                    case 1:
+                    case 1: //crea un'asta
                         System.out.println("\nInserisci il nome dell'asta che vuoi creare: \n");
                         nome = br.readLine();
                         System.out.println("Inserisci la descrizione dell'asta: \n");
@@ -64,7 +65,7 @@ public class mainClass {
                             System.out.println("Formato data non valido.\n");
                         }
                         break;
-                    case 2:
+                case 2:     //elimina un'asta
                         System.out.println("Inserisci il nome dell'asta da eliminare: \n");
                         nome = br.readLine();
                         if(peer.removeAuction(nome))
@@ -73,7 +74,7 @@ public class mainClass {
                             System.out.println("Errore durante l'eliminazione dell'asta\n");
                         break;
                     case 3: //follow dell'asta
-                        System.out.println("Inserisci il nome dell'asta che vuoi seguire: \n");
+                        System.out.println("Inserisci il nome dell'asta su cui vuoi restare aggiornato: \n");
                         nome = br.readLine();
                         if(peer.followAuction(nome))
                             System.out.println("Ora segui l'asta indicata\n");
@@ -81,7 +82,7 @@ public class mainClass {
                             System.out.println("Operazione non riuscita\n");
                         break;
                     case 4: //unfollow dell'asta
-                        System.out.println("Inserisci il nome dell'asta da cui vuoi uscire: \n");
+                        System.out.println("Inserisci il nome dell'asta di cui non vuoi più ricevere notifiche: \n");
                         nome = br.readLine();
                         if(peer.unfollowAuction(nome))
                             System.out.println("Hai abbandonato l'asta\n");
@@ -100,7 +101,16 @@ public class mainClass {
                         else
                             System.out.println("Puntata non effettuata\n");
                         break;
-                    case 6: //exit
+                    case 6:
+                        System.out.println("Inserisci il nome dell'asta di cui vuoi controllare lo stato: \n");
+                        nome = br.readLine();
+                        String stato = peer.checkAuction(nome);
+                        if(stato == null)
+                            System.out.println("Asta inesistente\n");
+                        else
+                            System.out.println("l'asta '"+nome+"' è " +stato);
+                        break;
+                    case 7: //exit
                         peer.leaveNetwork();
                         System.out.println("Rete abbandonata, termino il programma.\n");
                         System.exit(0);

@@ -440,7 +440,14 @@ public class AuctionMechanism implements AuctionMechanismInterface {
     private void declareTheWinner(Auction _auction) throws Exception {
         String prezzoFinale ;
         if(_auction.getOffertaPrec()==null)
-            prezzoFinale = String.valueOf(_auction.getOffertaAtt().getAmount());
+            if(_auction.getOffertaAtt() != null)
+                prezzoFinale = String.valueOf(_auction.getOffertaAtt().getAmount());
+
+            else {   //l'asta è scaduta senza nessuna puntata, non c'è un vincitore
+                //invia il messaggio per aggiornare la dht con l'asta in stato chiuso
+                sendClosingAuctionMessage(_auction);
+                return;
+            }
         else
             prezzoFinale = String.valueOf(_auction.getOffertaPrec().getAmount());
 
@@ -453,8 +460,11 @@ public class AuctionMechanism implements AuctionMechanismInterface {
 
         //aggiorno l'oggetto dell'asta includendo l'indirizzo del vincitore
         _auction.setWinner(winnerAddress);
-
         //invio un messaggio all'owner per fargli aggiornare l'oggetto e avvisare i followers che l'asta si è conclusa
+        sendClosingAuctionMessage(_auction);
+    }
+
+    private void sendClosingAuctionMessage(Auction _auction) throws Exception{
         if(_auction.getOwner() != peer.peerAddress()){
             Message msg2 = new Message(_auction, peer.peerAddress(), Message.MessageType.dhtUpdate);
             FutureDirect fd2 = dht.peer().sendDirect(_auction.getOwner()).object(msg2).start().awaitUninterruptibly();
