@@ -8,6 +8,9 @@ import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 
 public class mainClass {
     @Option(name="-m", aliases="--masterip", usage="the master peer ip address", required=true)
@@ -16,6 +19,7 @@ public class mainClass {
     private static int id;
 
     public static void main(String[] args){
+        Logger.getLogger("io.netty").setLevel(Level.OFF);
         mainClass classe = new mainClass();
         final CmdLineParser parser = new CmdLineParser(classe);
         try{
@@ -92,6 +96,10 @@ public class mainClass {
                     case 2: //modifica un'asta
                         System.out.println("Inserisci il nome dell'asta che vuoi modificare: \n");
                         nome = br.readLine();
+                        if(nome.isEmpty()){
+                            System.out.println("Nessun nome inserito\n");
+                            break;
+                        }
                         Auction myauction = peer.localSearch(nome);
                         if(myauction!=null){ //sono il proprietario dell'asta quindi posso modificarla
                             Auction asta = peer.globalSearch(nome);
@@ -198,7 +206,7 @@ public class mainClass {
                             System.out.println("Nessun nome inserito\n");
                             break;
                         }
-                        
+
                         String status = peer.checkAuction(nome);
                         if(status == null)
                             System.out.println("\nAsta inesistente\n");

@@ -4,8 +4,10 @@ import org.junit.jupiter.api.*;
 import pack.Auction;
 import pack.AuctionMechanism;
 import pack.Status;
-
 import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -14,6 +16,7 @@ public class JunitTestAuction {
 
     @BeforeAll
     static void testGeneratePeers(){
+        Logger.getLogger("io.netty").setLevel(Level.OFF);
         assertDoesNotThrow(() ->peer0 = new AuctionMechanism(0, "127.0.0.1"));
         assertDoesNotThrow(() ->peer1 = new AuctionMechanism(1, "127.0.0.1"));
         assertDoesNotThrow(() ->peer2 = new AuctionMechanism(2, "127.0.0.1"));
@@ -42,6 +45,7 @@ public class JunitTestAuction {
         //inserisco un'asta con data errata
         assertFalse(peer1.createAuction("Sedia", dataErrata , 20.0, "in ottimo stato"));
     }
+
     @Test
     @Order(2)
     //@Disabled
@@ -58,6 +62,7 @@ public class JunitTestAuction {
         //tenta di rimuovere un'asta inesistente
         assertFalse(peer1.removeAuction("Automobile"));
     }
+
     @Test
     @Order(3)
     //@Disabled
@@ -83,6 +88,7 @@ public class JunitTestAuction {
         Auction b = peer1.globalSearch("Bracciale");
         System.out.println("Ora la riserva è di: " + b.getRiserva());
     }
+
     @Test
     @Order(4)
     //@Disabled
@@ -184,6 +190,7 @@ public class JunitTestAuction {
         assertEquals(peer0.checkAuction("Automobile"), Status.chiusa.toString());
 
     }
+
     @Test
     @Order(8)
     //@Disabled
