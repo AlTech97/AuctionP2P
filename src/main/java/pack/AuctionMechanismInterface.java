@@ -15,21 +15,6 @@ public interface AuctionMechanismInterface {
     public boolean createAuction(String _auction_name, Date _end_time, double _reserved_price, String _description);
 
     /**
-     * Checks the status of the auction.
-     * @param _auction_name a String, the name of the auction.
-     * @return a String value that is the status of the auction. Null if the auction doesn't exist
-     */
-    public String checkAuction(String _auction_name);
-
-    /**
-     * Places a bid for an auction if it is not already ended.
-     * @param _auction_name a String, the name of the auction.
-     * @param _bid_amount a double value, the bid for an auction.
-     * @return a String value that is the status of the auction.
-     */
-    public String placeAbid(String _auction_name, double _bid_amount);
-
-    /**
      * Remove an auction. Only the owner will have success
      * @param _auction_name a String, the name of the auction.
      * @return true if the auction is correctly removed, false otherwise.
@@ -57,6 +42,21 @@ public interface AuctionMechanismInterface {
      * @return true if the the operation is successful, false otherwise
      */
     public boolean unfollowAuction(String _auction_name);
+
+    /**
+     * Places a bid for an auction if it is not already ended.
+     * @param _auction_name a String, the name of the auction.
+     * @param _bid_amount a double value, the bid for an auction.
+     * @return a String value that is the status of the auction.
+     */
+    public String placeAbid(String _auction_name, double _bid_amount);
+
+    /**
+     * Checks the status of the auction.
+     * @param _auction_name a String, the name of the auction.
+     * @return a String value that is the status of the auction. Null if the auction doesn't exist
+     */
+    public String checkAuction(String _auction_name);
 
     /**
      * Search for an auction among those created by the peer

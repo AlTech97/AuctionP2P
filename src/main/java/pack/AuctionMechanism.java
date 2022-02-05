@@ -2,7 +2,6 @@ package pack;
 
 import java.net.InetAddress;
 import java.util.*;
-
 import net.tomp2p.dht.*;
 import net.tomp2p.futures.BaseFutureAdapter;
 import net.tomp2p.futures.FutureBootstrap;
@@ -409,6 +408,53 @@ public class AuctionMechanism implements AuctionMechanismInterface {
     }
 
     /**
+     * Places a bid for an auction if it is not already ended.
+     *
+     * @param _auction_name name of the auction
+     * @param _bid_amount   a double value, the bid for an auction.
+     * @return a String value that is the status of the auction.
+     */
+    @Override
+    public String placeAbid(String _auction_name, double _bid_amount) {
+        try {
+            if(localSearch(_auction_name) != null)
+                throw new Exception("Non è possibile puntare su una propria asta\n");
+            else{
+                //controlla lo stato dell'asta e la chiude se è scaduto il tempo
+                String stato = checkAuction(_auction_name);
+                if(stato!= null) {
+                    if (stato.equals(Status.chiusa.toString())) {
+                        throw new Exception("L'asta è chiusa, non è possibile effettuare la puntata\n");
+                    }
+                    else {
+                        //ottieni l'oggetto dell'asta, non lancia eccezioni siccome globalSearch già le contiene
+                        Auction asta = globalSearch(_auction_name);
+                        if (asta != null) {
+                            //controlla la validità dell'offerta
+                            if (_bid_amount < asta.getRiserva())
+                                throw new Exception("Prezzo di riserva non raggiunto dalla tua offerta\n");
+                            else {
+                                //invia l'offerta all'owner dell'asta
+                                Bid puntata = new Bid (peer.peerAddress(),_auction_name, _bid_amount);
+                                Message msg = new Message(puntata,peer.peerAddress());
+                                FutureDirect fd = dht.peer().sendDirect(asta.getOwner()).object(msg)
+                                        .start().awaitUninterruptibly();
+                                if(fd.isFailed())
+                                    throw new Exception("Errore durante l'invio del messaggio della puntata\n");
+                            }
+                        }
+                    }
+                    return stato;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+       return null;
+    }
+
+
+    /**
      * Checks the status of the auction and close it if the time is expired
      *
      * @param _auction_name a String, the name of the auction.
@@ -477,52 +523,6 @@ public class AuctionMechanism implements AuctionMechanismInterface {
         else{   //se sono l'owner aggiorna direttamente la dht
             updateAuction(_auction);
         }
-    }
-
-    /**
-     * Places a bid for an auction if it is not already ended.
-     *
-     * @param _auction_name name of the auction
-     * @param _bid_amount   a double value, the bid for an auction.
-     * @return a String value that is the status of the auction.
-     */
-    @Override
-    public String placeAbid(String _auction_name, double _bid_amount) {
-        try {
-            if(localSearch(_auction_name) != null)
-                throw new Exception("Non è possibile puntare su una propria asta\n");
-            else{
-                //controlla lo stato dell'asta e la chiude se è scaduto il tempo
-                String stato = checkAuction(_auction_name);
-                if(stato!= null) {
-                    if (stato.equals(Status.chiusa.toString())) {
-                        throw new Exception("L'asta è chiusa, non è possibile effettuare la puntata\n");
-                    }
-                    else {
-                        //ottieni l'oggetto dell'asta, non lancia eccezioni siccome globalSearch già le contiene
-                        Auction asta = globalSearch(_auction_name);
-                        if (asta != null) {
-                            //controlla la validità dell'offerta
-                            if (_bid_amount < asta.getRiserva())
-                                throw new Exception("Prezzo di riserva non raggiunto dalla tua offerta\n");
-                            else {
-                                //invia l'offerta all'owner dell'asta
-                                Bid puntata = new Bid (peer.peerAddress(),_auction_name, _bid_amount);
-                                Message msg = new Message(puntata,peer.peerAddress());
-                                FutureDirect fd = dht.peer().sendDirect(asta.getOwner()).object(msg)
-                                        .start().awaitUninterruptibly();
-                                if(fd.isFailed())
-                                    throw new Exception("Errore durante l'invio del messaggio della puntata\n");
-                            }
-                        }
-                    }
-                    return stato;
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-       return null;
     }
 
     /**

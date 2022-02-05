@@ -13,7 +13,7 @@ public class JunitTestAuction {
     private static AuctionMechanism peer0, peer1, peer2, peer3;
 
     @BeforeAll
-    static void testCaseGeneratePeers(){
+    static void testGeneratePeers(){
         assertDoesNotThrow(() ->peer0 = new AuctionMechanism(0, "127.0.0.1"));
         assertDoesNotThrow(() ->peer1 = new AuctionMechanism(1, "127.0.0.1"));
         assertDoesNotThrow(() ->peer2 = new AuctionMechanism(2, "127.0.0.1"));
@@ -25,7 +25,7 @@ public class JunitTestAuction {
     @Test
     @Order (1)
     //@Disabled
-    void testCaseCreateAuction() {
+    void testCreateAuction() {
         //data di oggi
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
@@ -45,7 +45,7 @@ public class JunitTestAuction {
     @Test
     @Order(2)
     //@Disabled
-    void testCaseRemoveAuction() {
+    void testRemoveAuction() {
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
         Date dataCorretta = new Date(milliseconds + unGiorno);
@@ -61,7 +61,7 @@ public class JunitTestAuction {
     @Test
     @Order(3)
     //@Disabled
-    void testCaseUpdateAuction(){
+    void testUpdateAuction(){
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
         Date dataCorretta = new Date(milliseconds + unGiorno);
@@ -86,7 +86,7 @@ public class JunitTestAuction {
     @Test
     @Order(4)
     //@Disabled
-    void testCaseFollowUnfollowAuction(){
+    void testFollowUnfollowAuction(){
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
         Date dataCorretta = new Date(milliseconds + unGiorno);
@@ -116,7 +116,7 @@ public class JunitTestAuction {
     @Test
     @Order(5)
     //@Disabled
-    void testCasePlaceAbid(){
+    void testPlaceAbid(){
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
         Date dataCorretta = new Date(milliseconds + unGiorno);
@@ -138,7 +138,7 @@ public class JunitTestAuction {
     @Test
     @Order(6)
     //@Disabled
-    void testCaseDeclareTheWinner(){
+    void testDeclareTheWinner(){
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
         Date dataCorretta = new Date(milliseconds + unGiorno);
@@ -166,19 +166,28 @@ public class JunitTestAuction {
     @Test
     @Order(7)
     //@Disabled
-    void testCaseCheckAuction(){
+    void testCheckAuction(){
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
         Date dataCorretta = new Date(milliseconds + unGiorno);
+        Date dataIeri = new Date(milliseconds - unGiorno);
         assertTrue(peer0.createAuction("Automobile", dataCorretta, 1500.0, "usata"));
         assertEquals(peer1.checkAuction("Automobile"), Status.aperta.toString());
-        assertNotEquals(peer2.checkAuction("Automobile"), Status.chiusa.toString());
-        assertNull(peer3.checkAuction("Barca"));
+        assertNull(peer3.checkAuction("Nave"));
+
+        //faccio scadere l'asta
+        Auction a = peer0.localSearch("Automobile");
+        a.setEndTime(dataIeri);
+        assertTrue(peer0.updateAuction(a));
+
+        //verifico che ora l'asta risulti chiusa
+        assertEquals(peer0.checkAuction("Automobile"), Status.chiusa.toString());
+
     }
     @Test
     @Order(8)
     //@Disabled
-    void testCaseLocalSearch(){
+    void testLocalSearch(){
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
         Date dataCorretta = new Date(milliseconds + unGiorno);
@@ -191,7 +200,7 @@ public class JunitTestAuction {
     @Test
     @Order(9)
     //@Disabled
-    void testCaseGlobalSearch(){
+    void testGlobalSearch(){
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
         Date dataCorretta = new Date(milliseconds + unGiorno);
@@ -204,34 +213,36 @@ public class JunitTestAuction {
     @Test
     @Order(10)
     //@Disabled
-    void testCaseGetEveryAuctionNames(){
+    void testGetEveryAuctionNames(){
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
         Date dataCorretta = new Date(milliseconds + unGiorno);
         assertTrue(peer0.createAuction("Villa", dataCorretta, 200000.0, "con terrazza sul mare"));
         assertTrue(peer2.getEveryAuctionNames().contains("Villa"));
-        assertFalse(peer0.getEveryAuctionNames().isEmpty());
+        assertFalse(peer3.getEveryAuctionNames().isEmpty());
     }
 
     @Test
     @Order(11)
     //@Disabled
-    void testCaseGetOpenAuctions(){
+    void testGetOpenAuctions(){
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
         Date dataCorretta = new Date(milliseconds + unGiorno);
         Date dataIeri = new Date(milliseconds - unGiorno);
         assertTrue(peer0.createAuction("Limousine", dataCorretta, 5000.0, "full optional"));
-        Auction a = peer0.localSearch("Limousine");
-        assertTrue(peer0.getOpenAuctions().contains(a));
 
-        //faccio scadere l'asta
+        Auction a = peer1.globalSearch("Limousine");
+        assertTrue(peer1.getOpenAuctions().contains(a));
+
+        //il peer0 fa scadere l'asta anticipatamente
         a.setEndTime(dataIeri);
         assertTrue(peer0.updateAuction(a));
         assertEquals(peer0.checkAuction("Limousine"), Status.chiusa.toString());
 
         //getOpenAuction non restituirà più una lista contenente l'asta appena chiusa
-        assertFalse(peer0.getOpenAuctions().contains(a));
+        a = peer1.globalSearch("Limousine");
+        assertFalse(peer1.getOpenAuctions().contains(a));
     }
 
     @AfterAll
