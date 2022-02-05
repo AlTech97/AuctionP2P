@@ -243,6 +243,7 @@ public class JunitTestAuction {
         //getOpenAuction non restituirà più una lista contenente l'asta appena chiusa
         a = peer1.globalSearch("Limousine");
         assertFalse(peer1.getOpenAuctions().contains(a));
+
     }
 
     @AfterAll

@@ -27,6 +27,7 @@ public class mainClass {
 
             while(true){
                 BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
                 System.out.println("\nMENU: Digita un numero per effettuare l'operazione\n");
                 System.out.println("(0) - MOSTRA TUTTE LE ASTE APERTE\n");
                 System.out.println("(1) - CREA UN'ASTA\n");
@@ -67,9 +68,9 @@ public class mainClass {
                         data = formatoData.parse(br.readLine());
 
                         if(peer.createAuction(nome, data, prezzo, descrizione))
-                            System.out.println("Asta creata con successo\n");
+                            System.out.println("\nAsta creata con successo\n");
                         else
-                            System.out.println("Errore durante la creazione dell'asta\n");
+                            System.out.println("\nErrore durante la creazione dell'asta\n");
                         break;
 
                     case 2: //modifica un'asta
@@ -77,23 +78,23 @@ public class mainClass {
                         nome = br.readLine();
                         Auction a = peer.localSearch(nome);
                         if(a!=null){
-                            System.out.println("Hai chiesto di modificare quest'asta\n" + a +
-                                    "\n ti ricordo che non puoi modificare il nome dell'asta ma solo gli altri valori\n"+
+                            System.out.println("Hai chiesto di modificare quest'asta:\n\n" + a +
+                                    "\n\nTi ricordo che non puoi modificare il nome dell'asta ma solo gli altri valori.\n"+
                                     "Inserisci la nuova descrizione o premi invio per lasciarla invariata\n");
                             descrizione = br.readLine();
-                            if(descrizione == null)
+                            if(descrizione.isEmpty())
                                 descrizione = a.getDescription();
 
                             System.out.println("Inserisci il nuovo prezzo di riserva o premi invio per lasciarlo invariato\n");
                             String in = br.readLine();
-                            if(in == null)
+                            if(in.isEmpty())
                                 prezzo = a.getRiserva();
                             else
                                 prezzo = Double.parseDouble(in);
 
                             System.out.println("Inserisci la data aggiornata di termine dell'asta [gg/mm/yyyy] o premi invio per lasciarlo invariato \n");
                             in = br.readLine();
-                            if(in == null)
+                            if(in.isEmpty())
                                 data = a.getEndTime();
                             else
                                 data = formatoData.parse(in);
@@ -104,6 +105,9 @@ public class mainClass {
                             else
                                 System.out.println("Errore nell'aggiornamento dell'asta\n");
 
+                        }
+                        else{
+                            System.out.println("\nNon esiste alcun asta con questo nome\n");
                         }
                         break;
 
