@@ -137,13 +137,13 @@ L'avvio dell'applicazione è effettuabile con Docker seguendo questa guida:
 3. Dal terminale, tramite il path assoluto del dockerfile scaricato effettuiamo la build con il comando:
 
 ```shell
-Get-Content [path-assoluto-dockerfile] | docker build -t progetto_adc --no-cache
+Get-Content [path-assoluto-dockerfile] | docker build -t progetto_adc --no-cache -
 ```
 
 In alternativa, ci si può prima posizionare nella cartella che contiene il dockerfile e poi eseguire il comando:
 
 ```shell
-docker build -t progetto_adc --no-cache
+docker build -t progetto_adc --no-cache -
 ```
 
 Questo processo creerà un'immagine personalizzata chiamata "progetto_adc" contenente il codice e tutte le dipendenze.
