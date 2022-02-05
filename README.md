@@ -132,31 +132,30 @@ e di fatti il secondo peer, ripetendo le operazioni effettuate precedentemente, 
 ## 4. Avvio dell'applicazione
 ***
 L'avvio dell'applicazione è effettuabile con Docker seguendo questa guida:
-1. Scarichiamo il Dockerfile da questa repository o l'intero progetto
+1. Scarichiamo il Dockerfile o l'intero progetto da questa repository 
 2. Avviamo il demone di Docker
 3. Dal terminale, tramite il path assoluto del dockerfile scaricato effettuiamo la build con il comando:
 
-'''console
+```shell
 Get-Content [path-assoluto-dockerfile] | docker build -t progetto_adc --no-cache
-'''
+```
 
 In alternativa, ci si può prima posizionare nella cartella che contiene il dockerfile e poi eseguire il comando:
 
-'''console
+```shell
 docker build -t progetto_adc --no-cache
-''' 
+```
 
 Questo processo creerà un'immagine personalizzata chiamata "progetto_adc" contenente il codice e tutte le dipendenze.
 Quando la build sarà terminata con successo potremo passare al prossimo passo.
 
 4. Creiamo il primo container, il master peer, con il comando:
 
-'''console
+```shell
 docker run -i --name MASTER-PEER -e MASTERIP="127.0.0.1" -e ID=0 progetto_adc
-'''
+```
 
 5. Per creare ulteriori peer apriamo altri terminali ed eseguiamo il seguente comando facendo attenzione a modificare di volta in volta sia l'ID, incrementandolo, che il nome indicato dal parametro --name.
-
-'''console
+```shell
 docker run -i --name PEER-1 -e MASTERIP="172.17.0.2" -e ID=1 progetto_adc
-'''
+```
