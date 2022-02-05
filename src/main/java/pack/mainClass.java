@@ -83,26 +83,21 @@ public class mainClass {
                                 System.out.println("Hai chiesto di modificare quest'asta:\n\n" + asta +
                                         "\n\nTi ricordo che non puoi modificare il nome dell'asta ma solo gli altri valori.\n" +
                                         "Inserisci la nuova descrizione o premi invio per lasciarla invariata\n");
-                                descrizione = br.readLine();
-                                if (descrizione.isEmpty())
-                                    descrizione = asta.getDescription();
+                                String in = br.readLine();
+                                if (!in.isEmpty())
+                                    asta.setDescription(in);
 
                                 System.out.println("Inserisci il nuovo prezzo di riserva o premi invio per lasciarlo invariato\n");
-                                String in = br.readLine();
-                                if (in.isEmpty())
-                                    prezzo = asta.getRiserva();
-                                else
-                                    prezzo = Double.parseDouble(in);
+                                in = br.readLine();
+                                if (!in.isEmpty())
+                                     asta.setRiserva(Double.parseDouble(in));
 
                                 System.out.println("Inserisci la data aggiornata di termine dell'asta [gg/mm/yyyy] o premi invio per lasciarlo invariato \n");
                                 in = br.readLine();
-                                if (in.isEmpty())
-                                    data = asta.getEndTime();
-                                else
-                                    data = formatoData.parse(in);
-
-                                Auction update = new Auction(asta.getName(), descrizione, data, prezzo, peer.getAddress());
-                                if (peer.updateAuction(update))
+                                if (!in.isEmpty())
+                                    asta.setEndTime(formatoData.parse(in));
+                                //aggiorna l'asta con i nuovi campi
+                                if (peer.updateAuction(asta))
                                     System.out.println("\nAsta aggiornata con successo\n");
                                 else
                                     System.out.println("\nErrore nell'aggiornamento dell'asta\n");
