@@ -13,8 +13,8 @@ import net.tomp2p.peers.PeerAddress;
 import net.tomp2p.storage.Data;
 
 public class AuctionMechanism implements AuctionMechanismInterface {
-    ArrayList<Auction> asteCreate;   // aste che creo
-    final private ArrayList<String> asteSeguite;   //aste a cui partecipo
+    ArrayList<Auction> asteCreate;                  // aste che creo
+    final private ArrayList<String> asteSeguite;    //aste a cui partecipo
     final private Peer peer;
     final private PeerDHT dht;
     final private int DEFAULT_MASTER_PORT = 4000;
@@ -29,10 +29,12 @@ public class AuctionMechanism implements AuctionMechanismInterface {
         @Override
         public Object parseMessage(Object obj) {
             Message msg = (Message) obj;
+            //un'asta che seguo ha subito una modifica o ha ricevuto un'offerta, stampa l'asta aggiornata
             if(msg.getType().equals(Message.MessageType.feed)){
                     System.out.println("ID: " +peerid+") (Aggiornamento) "+msg.getAsta().toString());
                 return "success";
             }
+            //ho vinto un'asta, stampa il messaggio di vittoria ricevuto
             else if (msg.getType().equals(Message.MessageType.victory)){
                 System.out.println("ID: " +peerid+") (Vittoria) "+ msg.getText());
                 return "success";
@@ -43,20 +45,22 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                 Auction asta= localSearch(offerta.getAuctionName());
                 if(asta!=null){
                     if(offerta.getAmount() >= asta.getRiserva()){
-                        if(asta.getOffertaAtt()==null && asta.getOffertaPrec()==null){//prima offerta in assoluto ricevuta
+                        //prima offerta in assoluto ricevuta
+                        if(asta.getOffertaAtt()==null && asta.getOffertaPrec()==null){
                             asta.setOffertaAtt(offerta);
                             updateAuction(asta);
                             return "success";
                         }
-                        else{ //per tutte le offerte dopo la prima
+                        else{ //per tutte le offerte dopo la prima:
+                            //se l'offerta ricevuta supera quella con valore maggiore
                             if(offerta.getAmount() > asta.getOffertaAtt().getAmount()){
                                 asta.setOffertaPrec(asta.getOffertaAtt());
                                 asta.setOffertaAtt(offerta);
                                 updateAuction(asta);
                                 return "success";
                             }
-                            //seconda offerta in assoluto ricevuta (== null) che non supera la prima in valore
-                            //qualsiasi offerta che abbia un valore minore del primo e maggiore del secondo
+                            //seconda offerta in assoluto ricevuta (offertaPrec è null) che non supera la prima in valore...
+                            //...oppure qualsiasi offerta che abbia un valore minore del primo e maggiore del secondo
                             else if(asta.getOffertaPrec()==null || offerta.getAmount() > asta.getOffertaPrec().getAmount()){
                                 asta.setOffertaPrec(offerta);
                                 updateAuction(asta);
@@ -116,7 +120,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
      */
     @Override
     public boolean createAuction(String _auction_name, Date _end_time, double _reserved_price, String _description) {
-        //data di oggi
+        //salvo la data di oggi
         long milliseconds = System.currentTimeMillis();
         Date data = new Date(milliseconds);
         try {
@@ -131,7 +135,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                     if(nomiAste.contains(_auction_name))
                         throw new Exception("Il nome dell'asta indicato è già esistente\n");
                     else{
-                        //inserisco prima l'asta fisicamente e successivamente la aggiungo in lista
+                        //inserisco prima l'asta in dht fisicamente e successivamente la aggiungo in lista
                         Auction nuova = new Auction(_auction_name, _description, _end_time, _reserved_price, peer.peerAddress());
                         FuturePut future = dht.put(Number160.createHash(_auction_name))
                                 .data(new Data(nuova)).start().awaitUninterruptibly();
@@ -149,31 +153,23 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                                 throw new Exception("Errore durante l'aggiornamento della lista dei nomi\n");
                             }
                             else{
-                                //aggiungi la nuova asta alla lista locale delle aste che ho creato
-                                asteCreate.add(nuova);
-
-                                //aggiungi alla DHT la lista di followers dell'asta appena creata, se non esiste già
-                                FutureGet futureGet = dht.get(Number160.createHash(_auction_name + "Followers"))
-                                        .start().awaitUninterruptibly();
-                                if (!futureGet.isSuccess() || !futureGet.isEmpty())
-                                    throw new Exception("Eesiste già una lista dei followers collegata all'asta creata\n");
-                                else {
-                                    FuturePut future3 = dht.put(Number160.createHash(_auction_name + "Followers"))
-                                            .data(new Data(new HashSet<PeerAddress>())).start().awaitUninterruptibly();
-                                    if (!future3.isSuccess()){
-                                        //se la creazione della lista dei followers non va a buon fine elimina l'oggetto dell'asta
-                                        dht.remove(Number160.createHash(_auction_name)).all()
-                                                .start().awaitUninterruptibly();
-                                        asteCreate.remove(nuova);
-                                        //elimina anche il nome dell'asta dalla lista globale
-                                        nomiAste.remove(_auction_name);
-                                        dht.put(Number160.createHash("auctionList"))
-                                                .data(new Data(nomiAste)).start().awaitUninterruptibly();
-                                        throw new Exception("Errore durante la creazione della lista dei followers dell'asta\n");
-                                    }
-                                    else{
-                                        return true;
-                                    }
+                                //crea la lista di followers dell'asta appena creata
+                                FuturePut future3 = dht.put(Number160.createHash(_auction_name + "Followers"))
+                                        .data(new Data(new HashSet<PeerAddress>())).start().awaitUninterruptibly();
+                                if (!future3.isSuccess()){
+                                    //se la creazione della lista dei followers non va a buon fine elimina l'oggetto dell'asta
+                                    dht.remove(Number160.createHash(_auction_name)).all()
+                                            .start().awaitUninterruptibly();
+                                    //elimina anche il nome dell'asta dalla lista globale
+                                    nomiAste.remove(_auction_name);
+                                    dht.put(Number160.createHash("auctionList"))
+                                            .data(new Data(nomiAste)).start().awaitUninterruptibly();
+                                    throw new Exception("Errore durante la creazione della lista dei followers dell'asta\n");
+                                }
+                                else{
+                                    //aggiungi la nuova asta alla lista locale delle aste che ho creato
+                                    asteCreate.add(nuova);
+                                    return true;
                                 }
                             }
                         }
@@ -213,7 +209,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                             FutureRemove future2 = dht.remove(Number160.createHash(_auction_name)).all()
                                     .start().awaitUninterruptibly();
                             if (!future2.isSuccess()) {
-                                //riporto la lista allo stato precedente dato che la rimozione dell'asta è fallita
+                                //riporto la lista allo stato precedente dato che la rimozione dell'oggetto dell'asta è fallita
                                 nomiAste.add(_auction_name);
                                 dht.put(Number160.createHash("auctionList"))
                                         .data(new Data(nomiAste)).start().awaitUninterruptibly();
@@ -467,9 +463,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
         try{
             Auction asta = globalSearch(_auction_name);
             if(asta!= null){
-                //se il tempo è scaduto aggiorna lo stato dell'asta e la DHT
-                //aggiornato lo stato e decreta il vincitore chiamando l'apposito metodo
-                //FUNZIONA MA SAREBBE MEGLIO FAR AGGIORNARE L'ASTA DIRETTAMENTE DALL'OWNER AVVISANDOLO
+                //se il tempo è scaduto aggiorna lo stato dell'asta
                 if(asta.timeClose()){
                     FuturePut fp = dht.put(Number160.createHash(_auction_name))
                             .data(new Data(asta)).start().awaitUninterruptibly();
