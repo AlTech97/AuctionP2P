@@ -11,7 +11,6 @@ import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
 public class mainClass {
     @Option(name="-m", aliases="--masterip", usage="the master peer ip address", required=true)
     private static String master;
@@ -30,15 +29,16 @@ public class mainClass {
                 BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
                 System.out.println("\nMENU: Digita un numero per effettuare l'operazione\n");
-                System.out.println("(0) - MOSTRA TUTTE LE ASTE APERTE\n");
+                System.out.println("(0) - ELENCA TUTTE LE ASTE APERTE\n");
                 System.out.println("(1) - CREA UN'ASTA\n");
                 System.out.println("(2) - MODIFICA UN'ASTA\n");
                 System.out.println("(3) - ELIMINA ASTA\n");
                 System.out.println("(4) - SEGUI UN'ASTA\n");
-                System.out.println("(5) - SMETTI DI SEGUIRE UN'ASTA\n");
-                System.out.println("(6) - FAI UNA PUNTATA\n");
-                System.out.println("(7) - VERIFICA LO STATO DI UN'ASTA\n");
-                System.out.println("(8) - ESCI\n");
+                System.out.println("(5) - ELENCA TUTTE LE ASTE CHE SEGUI\n");
+                System.out.println("(6) - SMETTI DI SEGUIRE UN'ASTA\n");
+                System.out.println("(7) - FAI UNA PUNTATA\n");
+                System.out.println("(8) - VERIFICA LO STATO DI UN'ASTA\n");
+                System.out.println("(9) - ESCI\n");
                 String input = br.readLine();
                 int menu;
                 if(input.isEmpty())
@@ -85,7 +85,6 @@ public class mainClass {
                             break;
                         }
                         data = formatoData.parse(input);
-
                         if(peer.createAuction(nome, data, prezzo, descrizione))
                             System.out.println("\nAsta creata con successo\n");
                         else
@@ -99,8 +98,7 @@ public class mainClass {
                             System.out.println("Nessun nome inserito\n");
                             break;
                         }
-                        Auction myauction = peer.localSearch(nome);
-                        if(myauction!=null){ //sono il proprietario dell'asta quindi posso modificarla
+                        if(peer.localSearch(nome) !=null){ //sono il proprietario dell'asta quindi posso modificarla
                             Auction asta = peer.globalSearch(nome);
                             if(asta != null) {
                                 System.out.println("Hai chiesto di modificare quest'asta:\n\n" + asta +
@@ -130,7 +128,7 @@ public class mainClass {
                             }
                         }
                         else{
-                            System.out.println("\nSolo il proprietario può modificare un'asta\n");
+                            System.out.println("\nErrore: Puoi modificare solo le aste che hai creato\n");
                         }
                         break;
 
@@ -159,8 +157,19 @@ public class mainClass {
                         else
                             System.out.println("\nOperazione non riuscita\n");
                         break;
-                        
-                    case 5: //unfollow dell'asta
+
+                    case 5: //mostra le aste seguite
+                        ArrayList<String> following = peer.getAsteSeguite();
+                        if(following.isEmpty())
+                            System.out.println("Non segui alcun'asta\n");
+                        else{
+                            System.out.println("Ecco la lista di tutte le aste che segui:\n");
+                            for(String nomeAsta: following)
+                                System.out.println(nomeAsta+"\n");
+                        }
+                        break;
+
+                    case 6: //unfollow dell'asta
                         System.out.println("Inserisci il nome dell'asta di cui non vuoi più ricevere notifiche: \n");
                         nome = br.readLine();
                         if(nome.isEmpty()){
@@ -173,7 +182,7 @@ public class mainClass {
                             System.out.println("\nOperazione non riuscita\n");
                         break;
 
-                    case 6: //fai una puntata
+                    case 7: //fai una puntata
                         System.out.println("Inserisci il nome dell'asta su cui vuoi puntare: \n");
                         nome = br.readLine();
                         if(nome.isEmpty()){
@@ -198,7 +207,7 @@ public class mainClass {
                         }
                         break;
 
-                    case 7: //stato di un'asta
+                    case 8: //stato di un'asta
                         System.out.println("Inserisci il nome dell'asta di cui vuoi controllare lo stato: \n");
                         nome = br.readLine();
                         if(nome.isEmpty()){
@@ -213,7 +222,7 @@ public class mainClass {
                             System.out.println("\nL'asta '"+nome+"' è " +status);
                         break;
 
-                    case 8: //exit
+                    case 9: //exit
                         peer.leaveNetwork();
                         System.out.println("\nRete abbandonata, termino il programma.\n");
                         System.exit(0);

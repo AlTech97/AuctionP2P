@@ -620,6 +620,10 @@ public class AuctionMechanism implements AuctionMechanismInterface {
         return result;
     }
 
+    public ArrayList<String> getAsteSeguite(){
+        return asteSeguite;
+    }
+
     public PeerAddress getAddress(){
         return peer.peerAddress();
     }

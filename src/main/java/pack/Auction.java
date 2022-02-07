@@ -18,7 +18,6 @@ public class Auction implements Serializable {
     private PeerAddress winner; //indirizzo del vincitore
     private boolean oneTimeClose;
 
-
     public Auction(String name, String description, Date endTime, double minPrice, PeerAddress owner) {
         this.name = name;
         this.description = description;
@@ -128,15 +127,15 @@ public class Auction implements Serializable {
 
     @Override
     public String toString() {
-        String offerta1 =(offertaAtt==null) ? "null": String.valueOf(offertaAtt.getAmount());
-        String offerta2 = (offertaPrec==null) ? "null" : String.valueOf(offertaPrec.getAmount());
+        String offerta1 =(offertaAtt==null) ? "nessuna": String.valueOf(offertaAtt.getAmount());
+        String offerta2 = (offertaPrec==null) ? "nessuna" : String.valueOf(offertaPrec.getAmount());
         return "Auction{" +
                 "nome= '" + name + '\'' +
                 ", descrizione= '" + description + '\'' +
                 ", Termine= " + endTime +
                 ", Prezzo di riserva= " + riserva +
-                ", Offerta attuale= " + offerta1 +
-                ", Offerta Precedente= " + offerta2 +
+                ", Offerta maggiore= " + offerta1 +
+                ", Seconda offerta= " + offerta2 +
                 ", stato= " + status +
                 '}';
     }
