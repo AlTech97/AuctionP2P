@@ -25,7 +25,6 @@ public class mainClass {
         try{
             parser.parseArgument(args);
             AuctionMechanism peer = new AuctionMechanism(id, master);
-            System.out.println("\nAvvio del peer con id: "+id+ " e master node: " +master+ "\n");
 
             while(true){
                 BufferedReader br = new BufferedReader(new InputStreamReader(System.in));

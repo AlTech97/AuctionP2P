@@ -85,21 +85,22 @@ public class AuctionMechanism implements AuctionMechanismInterface {
         }
     }
 
-    public AuctionMechanism(int id, String master) throws Exception{
+    public AuctionMechanism(int id, String master) throws Exception {
         this.asteCreate = new ArrayList<>();
         this.asteSeguite = new ArrayList<>();
-        peer= new PeerBuilder(Number160.createHash(id)).ports(DEFAULT_MASTER_PORT+ id).start();
+        final MessageListener listener = new MessageListener(id);
+        peer = new PeerBuilder(Number160.createHash(id)).ports(DEFAULT_MASTER_PORT + id).start();
         dht = new PeerBuilderDHT(peer).start();
         FutureBootstrap futureBoot = peer.bootstrap().inetAddress(InetAddress.getByName(master))
                 .ports(DEFAULT_MASTER_PORT).start();
         futureBoot.awaitUninterruptibly();
-        if(futureBoot.isSuccess()){
+        if(futureBoot.isSuccess()) {
             peer.discover().peerAddress(futureBoot.bootstrapTo().iterator().next())
                     .start().awaitUninterruptibly();
-        } else{
+            System.out.println("\nAvvio del peer con id: "+id+ " e master node: " +master+ "\n");
+        } else {
             throw new Exception("Error in master peer bootstrap.");
         }
-        MessageListener listener = new MessageListener(id);
 
         peer.objectDataReply((sender, request) -> listener.parseMessage(request));
     }
@@ -312,6 +313,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                 HashSet<PeerAddress> peers_following = (HashSet<PeerAddress>)
                         futureGet.dataMap().values().iterator().next().object();
                 Message msg = new Message(toSend, peer.peerAddress(), Message.MessageType.feed);
+
                 for (PeerAddress follower : peers_following) {
                     FutureDirect fd = dht.peer().sendDirect(follower).object(msg).start().awaitListenersUninterruptibly();
                     if(fd.isFailed()){
