@@ -10,6 +10,8 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class mainClass {
     @Option(name="-m", aliases="--masterip", usage="the master peer ip address", required=true)
@@ -31,17 +33,21 @@ public class mainClass {
                 System.out.println("\nMENU: Digita un numero per effettuare l'operazione\n");
                 System.out.println("(0) - ELENCA TUTTE LE ASTE APERTE\n");
                 System.out.println("(1) - CREA UN'ASTA\n");
-                System.out.println("(2) - MODIFICA UN'ASTA\n");
-                System.out.println("(3) - ELIMINA ASTA\n");
-                System.out.println("(4) - SEGUI UN'ASTA\n");
-                System.out.println("(5) - ELENCA TUTTE LE ASTE CHE SEGUI\n");
-                System.out.println("(6) - SMETTI DI SEGUIRE UN'ASTA\n");
-                System.out.println("(7) - FAI UNA PUNTATA\n");
-                System.out.println("(8) - VERIFICA LO STATO DI UN'ASTA\n");
-                System.out.println("(9) - ESCI\n");
+                System.out.println("(2) - ELENCA LE ASTE CHE HAI CREATO\n");
+                System.out.println("(3) - MODIFICA UN'ASTA\n");
+                System.out.println("(4) - ELIMINA ASTA\n");
+                System.out.println("(5) - SEGUI UN'ASTA\n");
+                System.out.println("(6) - ELENCA TUTTE LE ASTE CHE SEGUI\n");
+                System.out.println("(7) - SMETTI DI SEGUIRE UN'ASTA\n");
+                System.out.println("(8) - FAI UNA PUNTATA\n");
+                System.out.println("(9) - VERIFICA LO STATO DI UN'ASTA\n");
+                System.out.println("(10) - ESCI\n");
                 String input = br.readLine();
+                String regex = "[0-9]+";
+                Pattern p = Pattern.compile(regex);
+                Matcher m = p.matcher(input);
                 int menu;
-                if(input.isEmpty())
+                if(input.isEmpty() || !m.matches() )
                     menu = -1;
                 else
                     menu =  Integer.parseInt(input);
@@ -90,8 +96,19 @@ public class mainClass {
                         else
                             System.out.println("\nErrore durante la creazione dell'asta\n");
                         break;
+                        
+                    case 2: //elenca le aste che hai creato
+                        ArrayList<Auction> lista = peer.getAsteCreate();
+                        if(lista.isEmpty())
+                            System.out.println("Non hai creato alcun'asta finora\n");
+                        else{
+                            System.out.println("Ecco la lista di aste che hai creato:\n");
+                            for(Auction a : lista)
+                                System.out.println(a+"\n");
+                        }
+                        break;
 
-                    case 2: //modifica un'asta
+                    case 3: //modifica un'asta
                         System.out.println("Inserisci il nome dell'asta che vuoi modificare: \n");
                         nome = br.readLine();
                         if(nome.isEmpty()){
@@ -132,7 +149,7 @@ public class mainClass {
                         }
                         break;
 
-                    case 3: //elimina un'asta
+                    case 4: //elimina un'asta
                         System.out.println("Inserisci il nome dell'asta da eliminare: \n");
                         nome = br.readLine();
                         if(nome.isEmpty()){
@@ -145,7 +162,7 @@ public class mainClass {
                             System.out.println("\nErrore durante l'eliminazione dell'asta\n");
                         break;
 
-                    case 4: //follow dell'asta
+                    case 5: //follow dell'asta
                         System.out.println("Inserisci il nome dell'asta su cui vuoi restare aggiornato: \n");
                         nome = br.readLine();
                         if(nome.isEmpty()){
@@ -158,7 +175,7 @@ public class mainClass {
                             System.out.println("\nOperazione non riuscita\n");
                         break;
 
-                    case 5: //mostra le aste seguite
+                    case 6: //mostra le aste seguite
                         ArrayList<String> following = peer.getAsteSeguite();
                         if(following.isEmpty())
                             System.out.println("Non segui alcun'asta\n");
@@ -169,7 +186,7 @@ public class mainClass {
                         }
                         break;
 
-                    case 6: //unfollow dell'asta
+                    case 7: //unfollow dell'asta
                         System.out.println("Inserisci il nome dell'asta di cui non vuoi più ricevere notifiche: \n");
                         nome = br.readLine();
                         if(nome.isEmpty()){
@@ -182,7 +199,7 @@ public class mainClass {
                             System.out.println("\nOperazione non riuscita\n");
                         break;
 
-                    case 7: //fai una puntata
+                    case 8: //fai una puntata
                         System.out.println("Inserisci il nome dell'asta su cui vuoi puntare: \n");
                         nome = br.readLine();
                         if(nome.isEmpty()){
@@ -207,7 +224,7 @@ public class mainClass {
                         }
                         break;
 
-                    case 8: //stato di un'asta
+                    case 9: //stato di un'asta
                         System.out.println("Inserisci il nome dell'asta di cui vuoi controllare lo stato: \n");
                         nome = br.readLine();
                         if(nome.isEmpty()){
@@ -222,7 +239,7 @@ public class mainClass {
                             System.out.println("\nL'asta '"+nome+"' è " +status);
                         break;
 
-                    case 9: //exit
+                    case 10: //exit
                         peer.leaveNetwork();
                         System.out.println("\nRete abbandonata, termino il programma.\n");
                         System.exit(0);

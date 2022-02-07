@@ -637,6 +637,10 @@ public class AuctionMechanism implements AuctionMechanismInterface {
         return asteSeguite;
     }
 
+    public ArrayList<Auction> getAsteCreate(){
+        return asteCreate;
+    }
+
     public PeerAddress getAddress(){
         return peer.peerAddress();
     }
