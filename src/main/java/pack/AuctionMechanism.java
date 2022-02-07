@@ -154,28 +154,22 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                                 throw new Exception("Errore durante l'aggiornamento della lista dei nomi\n");
                             }
                             else {
-                                FutureGet futureGet = dht.get(Number160.createHash(_auction_name + "Followers"))
-                                        .start().awaitUninterruptibly();
-                                if (!futureGet.isSuccess() || !futureGet.isEmpty())
-                                    throw new Exception("Eesiste già una lista dei followers collegata all'asta creata\n");
-                                else {
-                                    //crea la lista di followers dell'asta appena creata
-                                    FuturePut future3 = dht.put(Number160.createHash(_auction_name + "Followers"))
-                                            .data(new Data(new HashSet<PeerAddress>())).start().awaitUninterruptibly();
-                                    if (!future3.isSuccess()) {
-                                        //se la creazione della lista dei followers non va a buon fine elimina l'oggetto dell'asta
-                                        dht.remove(Number160.createHash(_auction_name)).all()
-                                                .start().awaitUninterruptibly();
-                                        //elimina anche il nome dell'asta dalla lista globale
-                                        nomiAste.remove(_auction_name);
-                                        dht.put(Number160.createHash("auctionList"))
-                                                .data(new Data(nomiAste)).start().awaitUninterruptibly();
-                                        throw new Exception("Errore durante la creazione della lista dei followers dell'asta\n");
-                                    } else {
-                                        //aggiungi la nuova asta alla lista locale delle aste che ho creato
-                                        asteCreate.add(nuova);
-                                        return true;
-                                    }
+                                //crea la lista di followers dell'asta appena creata
+                                FuturePut future3 = dht.put(Number160.createHash(_auction_name + "Followers"))
+                                        .data(new Data(new HashSet<PeerAddress>())).start().awaitUninterruptibly();
+                                if (!future3.isSuccess()) {
+                                    //se la creazione della lista dei followers non va a buon fine elimina l'oggetto dell'asta
+                                    dht.remove(Number160.createHash(_auction_name)).all()
+                                            .start().awaitUninterruptibly();
+                                    //elimina anche il nome dell'asta dalla lista globale
+                                    nomiAste.remove(_auction_name);
+                                    dht.put(Number160.createHash("auctionList"))
+                                            .data(new Data(nomiAste)).start().awaitUninterruptibly();
+                                    throw new Exception("Errore durante la creazione della lista dei followers dell'asta\n");
+                                } else {
+                                    //aggiungi la nuova asta alla lista locale delle aste che ho creato
+                                    asteCreate.add(nuova);
+                                    return true;
                                 }
                             }
                         }
@@ -439,12 +433,14 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                                 throw new Exception("Prezzo di riserva non raggiunto dalla tua offerta\n");
                             else {
                                 //invia l'offerta all'owner dell'asta
-                                Bid puntata = new Bid (peer.peerAddress(),_auction_name, _bid_amount);
-                                Message msg = new Message(puntata,peer.peerAddress());
+                                Bid puntata = new Bid(peer.peerAddress(), _auction_name, _bid_amount);
+                                Message msg = new Message(puntata, peer.peerAddress());
                                 FutureDirect fd = dht.peer().sendDirect(asta.getOwner()).object(msg)
                                         .start().awaitUninterruptibly();
-                                if(fd.isFailed())
+                                if (fd.isFailed()) {
+                                    System.out.println(fd.failedReason());
                                     throw new Exception("Errore durante l'invio del messaggio della puntata\n");
+                                }
                             }
                         }
                     }
