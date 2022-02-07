@@ -311,7 +311,8 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                 Message msg = new Message(toSend, peer.peerAddress(), Message.MessageType.feed);
 
                 for (PeerAddress follower : peers_following) {
-                    FutureDirect fd = dht.peer().sendDirect(follower).object(msg).start().awaitListenersUninterruptibly();
+                    FutureDirect fd = dht.peer().sendDirect(follower).object(msg)
+                            .start().awaitListenersUninterruptibly();
                     if(fd.isFailed()){
                         System.out.println(fd.failedReason() +"\n");
                         throw new Exception("Errore durante l'invio del messaggio d'aggiornamento\n");
@@ -438,11 +439,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                                 FutureDirect fd = dht.peer().sendDirect(asta.getOwner()).object(msg).start();
                                 fd.addListener(new BaseFutureAdapter<FutureDirect>() {
                                     @Override
-                                    public void operationComplete(FutureDirect future) throws Exception {
-                                        if (future.isFailed()) {
-                                            System.out.println(future.failedReason());
-                                        }
-                                    }
+                                    public void operationComplete(FutureDirect future){}
                                 });
                                 if (fd.isFailed()) {
                                     System.out.println(fd.failedReason());
@@ -508,7 +505,11 @@ public class AuctionMechanism implements AuctionMechanismInterface {
         Message msg = new Message("Complimenti, hai vinto l'asta \"" + _auction.getName()
                 + "\". Il prezzo con cui ti sei aggiudicato il prodotto è: "+ prezzoFinale, peer.peerAddress());
         PeerAddress winnerAddress = _auction.getOffertaAtt().getOwner();
-        FutureDirect fd = dht.peer().sendDirect(winnerAddress).object(msg).start().awaitUninterruptibly();
+        FutureDirect fd = dht.peer().sendDirect(winnerAddress).object(msg).start();
+        fd.addListener(new BaseFutureAdapter<FutureDirect>() {
+            @Override
+            public void operationComplete(FutureDirect future){}
+        });
         if(fd.isFailed())
             throw new Exception("Errore durante l'invio del messaggio di vittoria\n");
 
@@ -521,7 +522,11 @@ public class AuctionMechanism implements AuctionMechanismInterface {
     private void sendClosingAuctionMessage(Auction _auction) throws Exception{
         if(_auction.getOwner() != peer.peerAddress()){
             Message msg2 = new Message(_auction, peer.peerAddress(), Message.MessageType.dhtUpdate);
-            FutureDirect fd2 = dht.peer().sendDirect(_auction.getOwner()).object(msg2).start().awaitUninterruptibly();
+            FutureDirect fd2 = dht.peer().sendDirect(_auction.getOwner()).object(msg2).start();
+            fd2.addListener(new BaseFutureAdapter<FutureDirect>() {
+                @Override
+                public void operationComplete(FutureDirect future){}
+            });
             if(fd2.isFailed())
                 throw new Exception("Errore durante l'invio del messaggio di terminazione dell'asta all'owner\n");
         }
