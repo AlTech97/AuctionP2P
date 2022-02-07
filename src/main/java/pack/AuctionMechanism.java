@@ -13,6 +13,7 @@ import net.tomp2p.peers.PeerAddress;
 import net.tomp2p.storage.Data;
 
 public class AuctionMechanism implements AuctionMechanismInterface {
+
     ArrayList<Auction> asteCreate;                  // aste che creo
     final private ArrayList<String> asteSeguite;    //aste a cui partecipo
     final private Peer peer;
@@ -20,10 +21,10 @@ public class AuctionMechanism implements AuctionMechanismInterface {
     final private int DEFAULT_MASTER_PORT = 4000;
 
     class MessageListener implements MessageListenerInterface{
-        final int peerid;
-        public MessageListener(int peerid)
+        final int myId;
+        public MessageListener(int myId)
         {
-            this.peerid=peerid;
+            this.myId = myId;
         }
 
         @Override
@@ -31,12 +32,12 @@ public class AuctionMechanism implements AuctionMechanismInterface {
             Message msg = (Message) obj;
             //un'asta che seguo ha subito una modifica o ha ricevuto un'offerta, stampa l'asta aggiornata
             if(msg.getType().equals(Message.MessageType.feed)){
-                    System.out.println("ID: " +peerid+") (Aggiornamento) "+msg.getAsta().toString());
+                    System.out.println("ID: " + myId +") (Aggiornamento) "+msg.getAsta().toString());
                 return "success";
             }
             //ho vinto un'asta, stampa il messaggio di vittoria ricevuto
             else if (msg.getType().equals(Message.MessageType.victory)){
-                System.out.println("ID: " +peerid+") (Vittoria) "+ msg.getText());
+                System.out.println("ID: " + myId +") (Vittoria) "+ msg.getText());
                 return "success";
             }
             //messaggio di bid ricevuto da un peer che vuole fare un'offerta sulla mia asta.
@@ -92,7 +93,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
     public AuctionMechanism(int id, String master) throws Exception {
         this.asteCreate = new ArrayList<>();
         this.asteSeguite = new ArrayList<>();
-        final MessageListener listener = new MessageListener(id);
+        MessageListener listener = new MessageListener(id);
         peer = new PeerBuilder(Number160.createHash(id)).ports(DEFAULT_MASTER_PORT + id).start();
         dht = new PeerBuilderDHT(peer).start();
         FutureBootstrap futureBoot = peer.bootstrap().inetAddress(InetAddress.getByName(master))
