@@ -269,11 +269,13 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                         else {
                             FuturePut future = dht.put(Number160.createHash(_auction_name))
                                     .data(new Data(_auction)).start();
+                            /*
                             future.addListener(new BaseFutureAdapter<FuturePut>() {
                                 @Override
                                 public void operationComplete(FuturePut future){ }
                             }).awaitListenersUninterruptibly();
-
+*/
+                            future.awaitUninterruptibly();
                             if (!future.isSuccess())
                                 throw new Exception("Errore nell'aggiornamento dell'asta\n");
                             else {
@@ -557,10 +559,13 @@ public class AuctionMechanism implements AuctionMechanismInterface {
     public Auction globalSearch(String _auction_name){
         try {
         FutureGet fg = this.dht.get(Number160.createHash(_auction_name)).getLatest().start();
+        /*
         fg.addListener(new BaseFutureAdapter<FutureGet>() {
             @Override
             public void operationComplete(FutureGet future) {}
         }).awaitListenersUninterruptibly();
+         */
+        fg.awaitUninterruptibly();
         if (fg.isSuccess() && !fg.isEmpty())
                 return (Auction) fg.data().object();
         else
@@ -580,10 +585,15 @@ public class AuctionMechanism implements AuctionMechanismInterface {
     public ArrayList<String> getEveryAuctionNames(){
         try{
             FutureGet fg = this.dht.get(Number160.createHash("auctionList")).getLatest().start();
+            /*
             fg.addListener(new BaseFutureAdapter<FutureGet>() {
                 @Override
-                public void operationComplete(FutureGet future){}
+                public void operationComplete(FutureGet future){
+
+                }
             }).awaitListenersUninterruptibly();
+             */
+            fg.awaitUninterruptibly();
             if (fg.isSuccess() && !fg.isEmpty())
                 return (ArrayList<String>) fg.data().object();
         } catch (Exception e) {
