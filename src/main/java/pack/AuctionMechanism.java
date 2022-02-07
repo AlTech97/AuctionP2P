@@ -94,7 +94,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
         this.asteCreate = new ArrayList<>();
         this.asteSeguite = new ArrayList<>();
         MessageListener listener = new MessageListener(id);
-        peer = new PeerBuilder(Number160.createHash(id)).ports(DEFAULT_MASTER_PORT + id).start();
+        peer = new PeerBuilder(Number160.createHash(id)).ports(DEFAULT_MASTER_PORT+id).start();
         dht = new PeerBuilderDHT(peer).start();
         FutureBootstrap futureBoot = peer.bootstrap().inetAddress(InetAddress.getByName(master))
                 .ports(DEFAULT_MASTER_PORT).start();
@@ -153,24 +153,29 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                                         .start().awaitUninterruptibly();
                                 throw new Exception("Errore durante l'aggiornamento della lista dei nomi\n");
                             }
-                            else{
-                                //crea la lista di followers dell'asta appena creata
-                                FuturePut future3 = dht.put(Number160.createHash(_auction_name + "Followers"))
-                                        .data(new Data(new HashSet<PeerAddress>())).start().awaitUninterruptibly();
-                                if (!future3.isSuccess()){
-                                    //se la creazione della lista dei followers non va a buon fine elimina l'oggetto dell'asta
-                                    dht.remove(Number160.createHash(_auction_name)).all()
-                                            .start().awaitUninterruptibly();
-                                    //elimina anche il nome dell'asta dalla lista globale
-                                    nomiAste.remove(_auction_name);
-                                    dht.put(Number160.createHash("auctionList"))
-                                            .data(new Data(nomiAste)).start().awaitUninterruptibly();
-                                    throw new Exception("Errore durante la creazione della lista dei followers dell'asta\n");
-                                }
-                                else{
-                                    //aggiungi la nuova asta alla lista locale delle aste che ho creato
-                                    asteCreate.add(nuova);
-                                    return true;
+                            else {
+                                FutureGet futureGet = dht.get(Number160.createHash(_auction_name + "Followers"))
+                                        .start().awaitUninterruptibly();
+                                if (!futureGet.isSuccess() || !futureGet.isEmpty())
+                                    throw new Exception("Eesiste già una lista dei followers collegata all'asta creata\n");
+                                else {
+                                    //crea la lista di followers dell'asta appena creata
+                                    FuturePut future3 = dht.put(Number160.createHash(_auction_name + "Followers"))
+                                            .data(new Data(new HashSet<PeerAddress>())).start().awaitUninterruptibly();
+                                    if (!future3.isSuccess()) {
+                                        //se la creazione della lista dei followers non va a buon fine elimina l'oggetto dell'asta
+                                        dht.remove(Number160.createHash(_auction_name)).all()
+                                                .start().awaitUninterruptibly();
+                                        //elimina anche il nome dell'asta dalla lista globale
+                                        nomiAste.remove(_auction_name);
+                                        dht.put(Number160.createHash("auctionList"))
+                                                .data(new Data(nomiAste)).start().awaitUninterruptibly();
+                                        throw new Exception("Errore durante la creazione della lista dei followers dell'asta\n");
+                                    } else {
+                                        //aggiungi la nuova asta alla lista locale delle aste che ho creato
+                                        asteCreate.add(nuova);
+                                        return true;
+                                    }
                                 }
                             }
                         }
