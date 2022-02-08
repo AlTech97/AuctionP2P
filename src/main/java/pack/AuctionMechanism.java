@@ -273,35 +273,39 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                         else {
                             FuturePut future = dht.put(Number160.createHash(_auction_name))
                                     .data(new Data(_auction)).start();
-
-                            future.addListener(new BaseFutureListener<BaseFuture>() {
+                            //NON BLOCCANTE
+                            boolean[] flag = new boolean[1];
+                            flag[0] = false;
+                            future.addListener(new BaseFutureAdapter<FuturePut>() {
                                 @Override
-                                public void operationComplete(BaseFuture future)throws Exception{
-                                    if(future.isSuccess()){
-                                        asteCreate.remove(myAuction);
-                                        asteCreate.add(_auction);
-                                        sendFeedMessage(_auction);
-                                        System.out.println("Aggiornamento effettuato");
-                                    }
-                                    else
-                                        throw new Exception("Errore nell'aggiornamento dell'asta\n");
+                                public void operationComplete(FuturePut future) {
+                                    if(future.isSuccess())
+                                        flag[0] = true;
                                 }
+                            }).awaitListenersUninterruptibly();
 
-                                /**
-                                 * If the #operationComplete() is called and the method throws an exception.
-                                 *
-                                 * @param t The exception thrown in #operationComplete(BaseFuture).
-                                 * @throws Exception If an execption is thrown, it is printed in the log and and
-                                 *                   System.err
-                                 */
-                                @Override
-                                public void exceptionCaught(Throwable t) throws Exception {
-                                    t.printStackTrace();
-                                }
-                            });
-                            if(future.isSuccess())
+                            if (!flag[0])
+                                throw new Exception("Errore nel prelievo della lista dei followers dell'asta\n");
+                            else {
+                                asteCreate.remove(myAuction);
+                                asteCreate.add(_auction);
+                                sendFeedMessage(_auction);
+                                //System.out.println("Aggiornamento effettuato");
                                 return true;
+                            }
+                        /* VERSIONE BLOCCANTE
+                            future.awaitUninterruptibly();
+                            if(future.isSuccess()){
+                                asteCreate.remove(myAuction);
+                                asteCreate.add(_auction);
+                                sendFeedMessage(_auction);
+                                //System.out.println("Aggiornamento effettuato");
+                                return true;
+                            }
+                            else
+                                throw new Exception("Errore nell'aggiornamento dell'asta\n");
 
+                         */
                         }
                     }
                 }
@@ -317,10 +321,35 @@ public class AuctionMechanism implements AuctionMechanismInterface {
         String _auction_name = toSend.getName();
         try {
             FutureGet futureGet = dht.get(Number160.createHash(_auction_name + "Followers")).start();
+        //NON BLOCCANTE
+            boolean[] flag = new boolean[1];
+            flag[0] = false;
             futureGet.addListener(new BaseFutureAdapter<FutureGet>() {
                 @Override
-                public void operationComplete(FutureGet future){ }
+                public void operationComplete(FutureGet future) {
+                    if(future.isSuccess())
+                        flag[0] = true;
+                }
             }).awaitListenersUninterruptibly();
+
+            if (!flag[0])
+                throw new Exception("Errore nel prelievo della lista dei followers dell'asta\n");
+            else {
+                HashSet<PeerAddress> peers_following = (HashSet<PeerAddress>)
+                        futureGet.dataMap().values().iterator().next().object();
+                Message msg = new Message(toSend, peer.peerAddress(), Message.MessageType.feed);
+
+                for (PeerAddress follower : peers_following) {
+                    FutureDirect fd = dht.peer().sendDirect(follower).object(msg).start();
+                    fd.awaitListenersUninterruptibly();
+                    if (fd.isFailed()) {
+                        System.out.println(fd.failedReason() + "\n");
+                        throw new Exception("Errore durante l'invio del messaggio d'aggiornamento\n");
+                    }
+                }
+            }
+            /*VERSIONE BLOCCANTE
+            fg.awaitUninterruptibly();
             if (!futureGet.isSuccess())
                 throw new Exception("Errore nel prelievo della lista dei followers dell'asta\n");
             else {
@@ -330,7 +359,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
 
                 for (PeerAddress follower : peers_following) {
                     FutureDirect fd = dht.peer().sendDirect(follower).object(msg)
-                            .start().awaitListenersUninterruptibly();
+                            .start().awaitUninterruptibly();
                     if(fd.isFailed()){
                         System.out.println(fd.failedReason() +"\n");
                         throw new Exception("Errore durante l'invio del messaggio d'aggiornamento\n");
@@ -338,6 +367,8 @@ public class AuctionMechanism implements AuctionMechanismInterface {
 
                 }
             }
+
+             */
         }catch (Exception e) {
             e.printStackTrace();
         }
@@ -362,15 +393,14 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                     else {
                         FutureGet futureGet = dht.get(Number160.createHash(_auction_name + "Followers"))
                                 .start().awaitUninterruptibly();
-
                         if (!futureGet.isSuccess())
                             throw new Exception("Errore nel prelievo della lista dei followers dell'asta\n");
                         else {
                             HashSet<PeerAddress> peers_following = (HashSet<PeerAddress>)
                                     futureGet.dataMap().values().iterator().next().object();
                             peers_following.add(dht.peer().peerAddress());
-                            FuturePut fp = dht.put(Number160.createHash(_auction_name + "Followers")).data(new Data(peers_following))
-                                    .start().awaitUninterruptibly();
+                            FuturePut fp = dht.put(Number160.createHash(_auction_name + "Followers"))
+                                    .data(new Data(peers_following)).start().awaitUninterruptibly();
                             if (!fp.isSuccess())
                                 throw new Exception("Errore nell'aggiornamento della lista dei followers dell'asta\n");
                             else {
@@ -455,7 +485,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                                 Bid puntata = new Bid(peer.peerAddress(), _auction_name, _bid_amount);
                                 Message msg = new Message(puntata, peer.peerAddress());
                                 FutureDirect fd = dht.peer().sendDirect(asta.getOwner()).object(msg).start();
-                                /*
+                            /* NON BLOCCANTE
                                 fd.addListener(new BaseFutureAdapter<FutureDirect>() {
                                     @Override
                                     public void operationComplete(FutureDirect future){}
@@ -465,7 +495,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                                 fd.awaitUninterruptibly();
                                 if (fd.isFailed()) {
                                     System.out.println(fd.failedReason());
-                                    throw new Exception("Errore durante l'invio del messaggio della puntata\n");
+                                    throw new Exception("Errore durante l'invio del messaggio della puntata, riprova\n");
                                 }
                             }
                         }
@@ -494,20 +524,13 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                 //se il tempo è scaduto aggiorna lo stato dell'asta
                 if(asta.timeClose()){
                     FuturePut fp = dht.put(Number160.createHash(_auction_name))
-                            .data(new Data(asta)).start();
-                    fp.addListener(new BaseFutureListener<BaseFuture>() {
-                        @Override
-                        public void operationComplete(BaseFuture future) throws Exception {
-                            if (future.isSuccess())
-                                declareTheWinner(asta);
-                            else
-                                throw new Exception("Errore nell'aggiornamento dell'oggetto dell'asta\n");
-                        }
-                        @Override
-                        public void exceptionCaught(Throwable t) throws Exception {
-                            t.printStackTrace();
-                        }
-                    });
+                            .data(new Data(asta)).start().awaitUninterruptibly();
+                    if(!fp.isSuccess()){
+                        throw new Exception("Errore nell'aggiornamento dell'oggetto dell'asta\n");
+                    }
+                    else{
+                        declareTheWinner(asta);
+                    }
                 }
                 return asta.getStatus().toString();
             }
@@ -592,16 +615,29 @@ public class AuctionMechanism implements AuctionMechanismInterface {
     public Auction globalSearch(String _auction_name){
         try {
         FutureGet fg = this.dht.get(Number160.createHash(_auction_name)).getLatest().start();
+        boolean[] flag = new boolean[1];
+        flag[0] = false;
         fg.addListener(new BaseFutureAdapter<FutureGet>() {
             @Override
-            public void operationComplete(FutureGet future) {}
+            public void operationComplete(FutureGet future) {
+                if(future.isSuccess() && !future.isEmpty())
+                    flag[0] = true;
+            }
         }).awaitListenersUninterruptibly();
-
-//        fg.awaitUninterruptibly();
-        if (fg.isSuccess() && !fg.isEmpty())
-                return (Auction) fg.data().object();
+        if (flag[0])
+            return (Auction) fg.data().object();
         else
             throw new Exception("L'oggetto dell'asta richiesto non è stato trovato\n");
+
+    /* VERSIONE BLOCCANTE
+        fg.awaitUninterruptibly();
+        if(!fg.isSuccess() || fg.isEmpty())
+            throw new Exception("L'oggetto dell'asta richiesto non è stato trovato\n");
+        else
+            return (Auction) fg.data().object();
+
+     */
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -617,16 +653,25 @@ public class AuctionMechanism implements AuctionMechanismInterface {
     public ArrayList<String> getEveryAuctionNames(){
         try{
             FutureGet fg = this.dht.get(Number160.createHash("auctionList")).getLatest().start();
-
+            boolean[] flag = new boolean[1];
+            flag[0] = false;
             fg.addListener(new BaseFutureAdapter<FutureGet>() {
                 @Override
                 public void operationComplete(FutureGet future){
-
+                    if(future.isSuccess() && !future.isEmpty())
+                        flag[0] = true;
                 }
+
             }).awaitListenersUninterruptibly();
-            //fg.awaitUninterruptibly();
-            if (fg.isSuccess() && !fg.isEmpty())
+            if (flag[0])
                 return (ArrayList<String>) fg.data().object();
+
+        /*  VERSIONE BLOCCANTE
+            fg.awaitUninterruptibly();
+            if(fg.isSuccess && !fg.isEmpty())
+                return (ArrayList<String>) fg.data().object();
+        */
+
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -45,7 +45,6 @@ public class JunitTestAuction {
         //inserisco un'asta con data errata
         assertFalse(peer1.createAuction("Sedia", dataErrata , 20.0, "in ottimo stato"));
     }
-
     @Test
     @Order(2)
     //@Disabled
@@ -62,7 +61,6 @@ public class JunitTestAuction {
         //tenta di rimuovere un'asta inesistente
         assertFalse(peer1.removeAuction("Automobile"));
     }
-
     @Test
     @Order(3)
     //@Disabled
@@ -88,7 +86,6 @@ public class JunitTestAuction {
         Auction b = peer1.globalSearch("Bracciale");
         System.out.println("Ora la riserva è di: " + b.getRiserva());
     }
-
     @Test
     @Order(4)
     //@Disabled
@@ -137,6 +134,7 @@ public class JunitTestAuction {
         //testo il valore restituito da un'operazioned di bid su un asta aperta
         assertEquals(peer3.placeAbid("Computer", 280.0), Status.aperta.toString());
 
+        //faccio una puntata su un'asta inesistente
         assertNull(peer1.placeAbid("Automobile", 10500.0));
 
     }
@@ -179,6 +177,7 @@ public class JunitTestAuction {
         Date dataIeri = new Date(milliseconds - unGiorno);
         assertTrue(peer0.createAuction("Automobile", dataCorretta, 1500.0, "usata"));
         assertEquals(peer1.checkAuction("Automobile"), Status.aperta.toString());
+        //cerco lo stato di un'asta inesistente
         assertNull(peer3.checkAuction("Nave"));
 
         //faccio scadere l'asta
@@ -190,7 +189,6 @@ public class JunitTestAuction {
         assertEquals(peer0.checkAuction("Automobile"), Status.chiusa.toString());
 
     }
-
     @Test
     @Order(8)
     //@Disabled
