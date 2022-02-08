@@ -1,5 +1,6 @@
 package pack;
 
+import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import java.io.BufferedReader;
@@ -18,14 +19,15 @@ public class mainClass {
     @Option(name="-id", aliases="--identifierpeer", usage="the unique identifier for this peer", required=true)
     private static int id;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         mainClass classe = new mainClass();
         final CmdLineParser parser = new CmdLineParser(classe);
-        try {
-            parser.parseArgument(args);
-            AuctionMechanism peer = new AuctionMechanism(id, master);
 
-            while (true) {
+        parser.parseArgument(args);
+        AuctionMechanism peer = new AuctionMechanism(id, master);
+
+        while (true) {
+            try {
                 BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
                 System.out.println("\nMENU: Digita un numero per effettuare l'operazione\n");
@@ -58,10 +60,13 @@ public class mainClass {
                 switch (menu) {
                     case 0: //mostra tutte le aste aperte
                         ArrayList<Auction> aste = peer.getOpenAuctions();
-                        System.out.println("Ecco tutte le aste attualmente attive:\n");
-                        for (Auction a : aste) {
-                            System.out.println(a + "\n");
-                        }
+                        if (!aste.isEmpty()){
+                            System.out.println("Ecco tutte le aste attualmente attive:\n");
+                            for (Auction a : aste) {
+                                System.out.println(a + "\n");
+                            }
+                        }else
+                            System.out.println("Non ci sono aste attive\n");
                         break;
 
                     case 1: //crea un'asta
@@ -248,8 +253,9 @@ public class mainClass {
                         break;
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+            catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 }

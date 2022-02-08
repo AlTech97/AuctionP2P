@@ -113,7 +113,7 @@ public class JunitTestAuction {
         b.setRiserva(15.0);
         b.setDescription("mai indossato, spedizione a carico del cliente");
 
-        assertTrue(peer1.updateAuction(a));
+        assertTrue(peer1.updateAuction(b));
     }
 
     @Test
@@ -218,7 +218,7 @@ public class JunitTestAuction {
     @Test
     @Order(10)
     //@Disabled
-    void testGetEveryAuctionNames(){
+    void testGetEveryAuctionNames() {
         long milliseconds = System.currentTimeMillis();
         long unGiorno = 86400000;
         Date dataCorretta = new Date(milliseconds + unGiorno);
