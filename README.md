@@ -154,8 +154,29 @@ Quando la build sarà terminata con successo potremo passare al prossimo passo.
 ```shell
 docker run -i --name MASTER-PEER -e MASTERIP="127.0.0.1" -e ID=0 progetto_adc
 ```
-
-5. Per creare ulteriori peer apriamo altri terminali ed eseguiamo il seguente comando facendo attenzione a modificare di volta in volta sia l'ID, incrementandolo, che il nome indicato dal parametro --name.
+Facciamo notare che questo passo è fondamentale in quanto non sarà possibile avviare altri peer senza aver avviato prima il master.
+5. Per creare ulteriori peer apriamo altri terminali ed eseguiamo il seguente comando facendo attenzione a modificare di volta in volta sia l'ID, incrementandolo, che il nome del container indicato dal parametro --name.
 ```shell
 docker run -i --name PEER-1 -e MASTERIP="172.17.0.2" -e ID=1 progetto_adc
 ```
+
+6. Usciti dall'applicazione, se non si è provveduto ad eliminare i container creati, è possibile lanciarli di nuovo con il comando:
+```shell
+docker start -i [nome-container]
+```
+,dove [nome-container] è il nome indicato dal parametro --name nel comando run in fase di creazione.
+
+Per ottenere la lista di tutti i container con le relative informazioni, tra cui il nome, nel caso in cui non lo ricordassimo:
+```shell
+docker ps -a
+```
+oppure:
+```shell
+docker container ls -a
+```
+7. Terminato l'utilizzo dell'app, se si desiderasse eliminare tutti i container avviati si utilizza il comando:
+```shell
+docker container prune
+```
+e successivamente confermare con 'y' l'operazione.
+

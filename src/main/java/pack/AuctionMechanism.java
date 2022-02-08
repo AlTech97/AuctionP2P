@@ -3,9 +3,7 @@ package pack;
 import java.net.InetAddress;
 import java.util.*;
 import net.tomp2p.dht.*;
-import net.tomp2p.futures.BaseFutureAdapter;
-import net.tomp2p.futures.FutureBootstrap;
-import net.tomp2p.futures.FutureDirect;
+import net.tomp2p.futures.*;
 import net.tomp2p.p2p.Peer;
 import net.tomp2p.p2p.PeerBuilder;
 import net.tomp2p.peers.Number160;
@@ -276,21 +274,33 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                             FuturePut future = dht.put(Number160.createHash(_auction_name))
                                     .data(new Data(_auction)).start();
 
-                            future.addListener(new BaseFutureAdapter<FuturePut>() {
+                            future.addListener(new BaseFutureListener<BaseFuture>() {
                                 @Override
-                                public void operationComplete(FuturePut future){ }
-                            }).awaitListenersUninterruptibly();
+                                public void operationComplete(BaseFuture future)throws Exception{
+                                    if(future.isSuccess()){
+                                        asteCreate.remove(myAuction);
+                                        asteCreate.add(_auction);
+                                        sendFeedMessage(_auction);
+                                        System.out.println("Aggiornamento effettuato");
+                                    }
+                                    else
+                                        throw new Exception("Errore nell'aggiornamento dell'asta\n");
+                                }
 
-                            //future.awaitUninterruptibly();
-                            if (!future.isSuccess())
-                                throw new Exception("Errore nell'aggiornamento dell'asta\n");
-                            else {
-                                //aggiorna la lista delle aste che ho creato e invia il messaggio di update ai followers
-                                asteCreate.remove(myAuction);
-                                asteCreate.add(_auction);
-                                sendFeedMessage(_auction);
+                                /**
+                                 * If the #operationComplete() is called and the method throws an exception.
+                                 *
+                                 * @param t The exception thrown in #operationComplete(BaseFuture).
+                                 * @throws Exception If an execption is thrown, it is printed in the log and and
+                                 *                   System.err
+                                 */
+                                @Override
+                                public void exceptionCaught(Throwable t) throws Exception {
+                                    t.printStackTrace();
+                                }
+                            });
+                            if(future.isSuccess())
                                 return true;
-                            }
 
                         }
                     }
@@ -445,10 +455,14 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                                 Bid puntata = new Bid(peer.peerAddress(), _auction_name, _bid_amount);
                                 Message msg = new Message(puntata, peer.peerAddress());
                                 FutureDirect fd = dht.peer().sendDirect(asta.getOwner()).object(msg).start();
+                                /*
                                 fd.addListener(new BaseFutureAdapter<FutureDirect>() {
                                     @Override
                                     public void operationComplete(FutureDirect future){}
                                 }).awaitListenersUninterruptibly();
+
+                                 */
+                                fd.awaitUninterruptibly();
                                 if (fd.isFailed()) {
                                     System.out.println(fd.failedReason());
                                     throw new Exception("Errore durante l'invio del messaggio della puntata\n");
@@ -480,13 +494,20 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                 //se il tempo è scaduto aggiorna lo stato dell'asta
                 if(asta.timeClose()){
                     FuturePut fp = dht.put(Number160.createHash(_auction_name))
-                            .data(new Data(asta)).start().awaitUninterruptibly();
-                    if (!fp.isSuccess())
-                        throw new Exception("Errore nell'aggiornamento dell'oggetto dell'asta\n");
-                    else{
-                        //chiama il metodo per decretare il vincitore
-                        declareTheWinner(asta);
-                    }
+                            .data(new Data(asta)).start();
+                    fp.addListener(new BaseFutureListener<BaseFuture>() {
+                        @Override
+                        public void operationComplete(BaseFuture future) throws Exception {
+                            if (future.isSuccess())
+                                declareTheWinner(asta);
+                            else
+                                throw new Exception("Errore nell'aggiornamento dell'oggetto dell'asta\n");
+                        }
+                        @Override
+                        public void exceptionCaught(Throwable t) throws Exception {
+                            t.printStackTrace();
+                        }
+                    });
                 }
                 return asta.getStatus().toString();
             }

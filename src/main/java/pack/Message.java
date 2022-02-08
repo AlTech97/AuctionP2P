@@ -1,9 +1,7 @@
 package pack;
 
 import net.tomp2p.peers.PeerAddress;
-
 import java.io.Serializable;
-
 
 public class Message implements Serializable {
 
@@ -18,7 +16,7 @@ public class Message implements Serializable {
     private Bid bid;
     private String text;
     private MessageType msgtype;
-    private PeerAddress sender;
+    private final PeerAddress sender;
 
     /**
      * Constructor for feed messages, intended to the followers of an auction
