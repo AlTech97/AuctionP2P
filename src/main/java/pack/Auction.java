@@ -36,9 +36,9 @@ public class Auction implements Serializable {
         //data di oggi
         long milliseconds = System.currentTimeMillis();
         Date data = new Date(milliseconds);
-        if(data.after(endTime) && !oneTimeClose){
+        if(data.after(this.endTime) && !this.oneTimeClose){
             this.status = Status.chiusa;
-            oneTimeClose=true;
+            this.oneTimeClose=true;
             return true;
         }
         return false;
