@@ -297,19 +297,17 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                     Auction a = globalSearch(_auction_name);
                     if (a == null)
                         throw new Exception("L'oggetto dell'asta da aggiornare non è stato trovato\n");
-                    else{
+                    else {
                         FuturePut future = dht.put(Number160.createHash(_auction_name))
-                                .data(new Data(_auction)).start();
-                        //VERSIONE BLOCCANTE
-                        future.awaitUninterruptibly();
-                        if(future.isSuccess()){
+                                .data(new Data(_auction)).start().awaitUninterruptibly();
+                        if (future.isSuccess()) {
+                            sendFeedMessage(_auction);
                             asteCreate.remove(myAuction);
                             asteCreate.add(_auction);
-                            sendFeedMessage(_auction);
                             return true;
-                        }
-                        else
+                        } else
                             throw new Exception("Errore nell'aggiornamento dell'asta\n");
+
                     }
                 }
             }
@@ -435,7 +433,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
             else{
                 //controlla lo stato dell'asta e la chiude se è scaduto il tempo
                 String stato = checkAuction(_auction_name);
-                if(stato!= null) {
+                if(stato!= null){
                     if (stato.equals(Status.chiusa.toString())) {
                         throw new Exception("L'asta è chiusa, non è possibile effettuare la puntata\n");
                     }
@@ -450,10 +448,9 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                                 //invia l'offerta all'owner dell'asta
                                 Bid puntata = new Bid(peer.peerAddress(), _auction_name, _bid_amount);
                                 Message msg = new Message(puntata, peer.peerAddress());
-                                FutureDirect fd = dht.peer().sendDirect(asta.getOwner()).object(msg).start();
-                                fd.awaitUninterruptibly();
+                                FutureDirect fd = dht.peer().sendDirect(asta.getOwner()).object(msg)
+                                        .start().awaitUninterruptibly();
                                 if (fd.isFailed()) {
-                                    System.out.println(fd.failedReason());
                                     throw new Exception("Errore durante l'invio del messaggio della puntata, riprova\n");
                                 }
                             }
@@ -482,8 +479,6 @@ public class AuctionMechanism implements AuctionMechanismInterface {
             if(asta!= null){
                 //se il tempo è scaduto avvia la procedura di vincita
                 if(asta.timeClose()) {
-                    //aggiorno subito la dht per far risultare l'asta chiusa e dopo dichiaro il vincitore
-                    sendUpdateAuctionMessage(asta);
                     declareTheWinner(asta);
                 }
                 return asta.getStatus().toString();
@@ -526,8 +521,8 @@ public class AuctionMechanism implements AuctionMechanismInterface {
         //se l'asta è scaduta e non sono l'owner invia un messaggio a quest'ultimo per avvisarlo
         if(_auction.getOwner() != peer.peerAddress()){
             Message msg2 = new Message(_auction, peer.peerAddress(), Message.MessageType.dhtUpdate);
-            FutureDirect fd2 = dht.peer().sendDirect(_auction.getOwner()).object(msg2).start();
-            fd2.awaitUninterruptibly();
+            FutureDirect fd2 = dht.peer().sendDirect(_auction.getOwner()).object(msg2)
+                    .start().awaitUninterruptibly();
             if(fd2.isFailed())
                 throw new Exception("Errore durante l'invio del messaggio di terminazione dell'asta all'owner\n");
         }
@@ -557,9 +552,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
     @Override
     public Auction globalSearch(String _auction_name){
         try {
-        FutureGet fg = this.dht.get(Number160.createHash(_auction_name)).getLatest().start();
-        //VERSIONE BLOCCANTE
-        fg.awaitUninterruptibly();
+        FutureGet fg = this.dht.get(Number160.createHash(_auction_name)).getLatest().start().awaitUninterruptibly();
         if(!fg.isSuccess() || fg.isEmpty())
             throw new Exception("L'oggetto dell'asta richiesto non è stato trovato\n");
         else
@@ -579,9 +572,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
     @SuppressWarnings("unchecked")
     public ArrayList<String> getEveryAuctionNames() {
         try{
-            FutureGet fg = this.dht.get(Number160.createHash("auctionList")).getLatest().start();
-            //VERSIONE BLOCCANTE
-            fg.awaitUninterruptibly();
+            FutureGet fg = this.dht.get(Number160.createHash("auctionList")).getLatest().start().awaitUninterruptibly();
             if (fg.isSuccess() && !fg.isEmpty())
                 return (ArrayList<String>) fg.data().object();
 

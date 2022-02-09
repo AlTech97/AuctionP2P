@@ -29,14 +29,14 @@ L’applicazione inoltre adopera Apache Maven per gestire le dipendenze e Docker
 
 
 ### Funzionalità realizzate
-In dettaglio, l’applicazione permette ai client di connettersi e disconnettersi dalla rete, effettuare operazioni CRUD sulle aste presenti in DHT, 
-effettuare puntate su un’asta aperta, seguire un’asta per ricevere tutti gli aggiornamenti riguardo: 
+L’applicazione permette ai client di connettersi e disconnettersi dalla rete, effettuare operazioni CRUD sulle aste presenti in DHT, 
+puntare su un’asta aperta, seguire un’asta per ricevere tutti gli aggiornamenti riguardo: 
 le modifiche delle informazioni dell’asta (descrizione, data di termine, prezzo di riserva), puntate effettuate e terminazione della stessa.
 
 
 ### Struttura della soluzione
-Nella cartella più esterna sono situati il file pom.xml che contiene le dipendenze del progetto utili a Maven all’avvio dell’applicazione, 
-il Dockerfile che consente la creazione di un’immagine personalizzata a partire da alpine che include le dipendenze scaricate da maven e il progetto clonato da Git. 
+Nella cartella più esterna è situato il file pom.xml che contiene le dipendenze del progetto utili a Maven per l'avvio dell’applicazione, 
+il Dockerfile che consente la creazione di un’immagine personalizzata a partire da Alpine, al quale si aggiungono le dipendenze scaricate da Maven e il progetto clonato da Git. 
 Mostreremo la procedura di creazione dell'immagine (build) e avvio dell'applicazione (run) successivamente, in un capitolo a parte.
 
 L’implementazione è suddivisa in due package: “pack” e “testPack”. Il primo, “pack”, contiene tutta la logica di funzionamento del sistema. 
@@ -46,13 +46,18 @@ Legata alla classe Asta abbiamo l’enumerazione Status che definisce due stati 
 Anche la classe Message detiene un’enumerazione al suo interno che permette di differenziare la tipologia di messaggio tra: 
 “feed”, il messaggio di aggiornamento inviato a tutti i peer che seguono un’asta, “bid” se il messaggio contiene una puntata a un’asta, 
 “victory” se il messaggio contiene una frase riguardo la vittoria a un’asta, “dhtUpdate” se contiene l’asta appena chiusa che, inviata al proprietario, provvederà ad aggiornare la DHT. 
-Quest’ultima è fondamentale in quanto si concede unicamente al proprietario di un’asta di modificare i campi della dht relativi alle proprie aste.
-Proseguendo la descrizione, ritroviamo la classe AuctionMechanism che implementa i metodi definiti nell’interfaccia AuctionMechanismInterface per effettuare tutte le operazioni CRUD sulla DHT, 
-lo scambio di messaggi attraverso i metodi d'invio e il MessageListener come classe interna per la ricezione, e infine altre funzioni come il follow e l’unfollow di un’asta.
+Quest’ultima è fondamentale in quanto si concede unicamente al proprietario di un’asta di modificare i campi della DHT relativi alle proprie aste.
+
+Proseguendo la descrizione, ritroviamo la classe AuctionMechanism che implementa i metodi definiti nell’interfaccia AuctionMechanismInterface per effettuare tutte le operazioni CRUD sulla DHT.
+Questa classe consente anche lo scambio di messaggi tra peer, realizzato con i metodi d'invio e la sottoclasse MessageListener che, 
+unita alla sottoclasse Worker, elaborano i messaggi ricevuti.
+Infine, la classe comprende altre funzioni come il follow e l’unfollow di un’asta che permettono ad un peer di restare aggiornato su tutti gli eventi di un'asta.
+
 Nella classe main, invece, viene instanziato un solo oggetto AuctionMechanism così da permettere l’esecuzione di un solo peer per macchina, 
 dato che a ogni istanza di AuctionMechanism è associata l'istanza di un peer al suo interno. 
 La classe main stampa un menù a riga di comando e permette di effettuare tutte le operazioni elencate precedentemente.
-Il secondo, “testPack”, contiene unicamente la classe JunitTestAuction per i test unitari che approfondiremo successivamente
+
+Il secondo package, “testPack”, contiene unicamente la classe JunitTestAuction per i test unitari che approfondiremo successivamente
 
 
 ### Dettagli implementativi
@@ -78,9 +83,14 @@ Quest’ultimo messaggio si rende necessario siccome il proprietario di un’ast
 allora qualsiasi peer che controlla lo stato di un’asta (con il metodo checkAuction), prima di svolgere qualsiasi operazione su di essa, 
 esegue implicitamente anche un controllo sul tempo limite dell’asta e nel caso questo sia scaduto avverte il proprietario dell’asta di quest’evento per chiudere l’asta e decretare il vincitore.
 
-All’invio dei messaggi all’interno dei metodi appena citati corrisponde la ricezione da parte di un altro peer gestita con il metodo parseMessage della classe interna MessageListener il quale, 
-in base alla tipologia di messaggio ricevuto effettua l’operazione prestabilita:
-* Nel caso di un messaggio di feed o di vittoria (congratulazioni) si stampa semplicemente il contenuto di questo
+L'invio dei messaggi è stato implementato con funzioni bloccanti per semplicità e per un altro motivo descritto ora.
+
+A tal proposito approfondiamo il meccanismo di ricezione dei messaggi.
+La ricezione è affidata al metodo parseMessage della classe interna MessageListener, il quale inserisce il messaggio in una coda sincronizzata, 
+condivisa con un altro thread e restituisce l'esito positivo dell'operazione sbloccando chi lo ha inviato.
+Il metodo run() della classe interna Worker contiene la logica di gestione dei messaggi da parte di un thread secondario che viene avviato quando un peer viene lanciato e stoppato quando il peer abbandona la rete chiudendo il programma.
+Il thread legge uno a uno i messaggi dalla coda sincronizzata (o attende che ce ne sia almeno uno) e:
+* Nel caso di un messaggio di feed o di vittoria (contenente del testo di congratulazioni) si stampa semplicemente il contenuto di questo
 * Se si riceve un messaggio di Bid si accede ai due valori relativi alle offerte più alte ricevute finora e se l'offerta dovesse superare uno di questi due a partire dal primo si sostituisce il campo di tipo Bid (contenente nome dell'asta, indirizzo del bidder e valore della puntata) avente importo minore con quello di valore più alto
 * Se il proprietario di un'asta riceve un messaggio di tipo "dhtUpdate" significa che qualche altro peer ha appena notato che l'asta è scaduta,
 quindi ha modificato il campo status localmente e ha inviato l'intero oggetto all'owner dell'asta che provvederà ad aggiornarlo in DHT
