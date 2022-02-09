@@ -4,6 +4,7 @@ import net.tomp2p.peers.PeerAddress;
 import java.io.Serializable;
 
 public class Bid implements Serializable {
+
     private static final long serialVersionUID = 1L;
     private final PeerAddress owner;          //indirizzo di contatto di chi ha effettuato la puntata
     private String auctionName;         //nome dell'asta su cui si punta
@@ -34,4 +35,5 @@ public class Bid implements Serializable {
     public void setAmount(double amount) {
         this.amount = amount;
     }
+
 }

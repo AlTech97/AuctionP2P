@@ -1,7 +1,6 @@
 package pack;
 
 import net.tomp2p.peers.PeerAddress;
-
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Objects;

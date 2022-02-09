@@ -1,6 +1,5 @@
 package pack;
 
-import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import java.io.BufferedReader;
@@ -12,7 +11,6 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
 public class mainClass {
     @Option(name="-m", aliases="--masterip", usage="the master peer ip address", required=true)
     private static String master;
@@ -20,16 +18,24 @@ public class mainClass {
     private static int id;
 
     public static void main(String[] args) throws Exception {
+        //ottengo i parametri dalla linea di comando
         mainClass classe = new mainClass();
         final CmdLineParser parser = new CmdLineParser(classe);
-
         parser.parseArgument(args);
+        //inizializzo il meccanismo d'asta con i parametri letti
         AuctionMechanism peer = new AuctionMechanism(id, master);
+        //dichiaro una serie di variabili e oggetti che mi serviranno nel menù
+        String input, nome, in;
+        String regex = "[0-9]+";
+        Pattern p = Pattern.compile(regex);
+        Matcher m;
+        int menu;
+        DateFormat formatoData = DateFormat.getDateInstance(DateFormat.SHORT, Locale.ITALY);
+        formatoData.setLenient(false);
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
         while (true) {
             try {
-                BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-
                 System.out.println("\nMENU: Digita un numero per effettuare l'operazione\n");
                 System.out.println("(0) - ELENCA TUTTE LE ASTE APERTE\n");
                 System.out.println("(1) - CREA UN'ASTA\n");
@@ -42,21 +48,14 @@ public class mainClass {
                 System.out.println("(8) - FAI UNA PUNTATA\n");
                 System.out.println("(9) - VERIFICA LO STATO DI UN'ASTA\n");
                 System.out.println("(10) - ESCI\n");
-                String input = br.readLine();
-                String regex = "[0-9]+";
-                Pattern p = Pattern.compile(regex);
-                Matcher m = p.matcher(input);
-                int menu;
+                
+                input = br.readLine();
+                m = p.matcher(input);
                 if (input.isEmpty() || !m.matches())
                     menu = -1;
                 else
                     menu = Integer.parseInt(input);
-                String nome;        //nome dell'asta su cui operare
-                double prezzo;
-                String descrizione;
-                Date data;
-                DateFormat formatoData = DateFormat.getDateInstance(DateFormat.SHORT, Locale.ITALY);
-                formatoData.setLenient(false);
+
                 switch (menu) {
                     case 0: //mostra tutte le aste aperte
                         ArrayList<Auction> aste = peer.getOpenAuctions();
@@ -66,7 +65,7 @@ public class mainClass {
                                 System.out.println(a + "\n");
                             }
                         }else
-                            System.out.println("Non ci sono aste attive\n");
+                            System.out.println("\nNon ci sono aste attive\n");
                         break;
 
                     case 1: //crea un'asta
@@ -78,22 +77,23 @@ public class mainClass {
                         }
 
                         System.out.println("Inserisci la descrizione dell'asta: \n");
-                        descrizione = br.readLine();
+                        String descrizione = br.readLine();
 
-                        System.out.println("Inserisci il prezzo di riserva Es:10.90 \n");
-                        input = br.readLine();
-                        if (input.isEmpty())
+                        System.out.println("Inserisci il prezzo di riserva Es:10.90 o premi invio per impostarlo a 0\n");
+                        in = br.readLine();
+                        double prezzo;
+                        if (in.isEmpty())
                             prezzo = 0;
                         else
-                            prezzo = Double.parseDouble(input);
+                            prezzo = Double.parseDouble(in);
 
                         System.out.println("Inserisci la data di termine dell'asta a partire da quella di domani [gg/mm/yyyy]: \n");
-                        input = br.readLine();
-                        if (input.isEmpty()) {
-                            System.out.println("La data di termine di un'asta è obbligatoria\n");
+                        in = br.readLine();
+                        if (in.isEmpty()) {
+                            System.out.println("\nLa data di termine di un'asta è obbligatoria\n");
                             break;
                         }
-                        data = formatoData.parse(input);
+                        Date data = formatoData.parse(input);
                         if (peer.createAuction(nome, data, prezzo, descrizione))
                             System.out.println("\nAsta creata con successo\n");
                         else
@@ -103,7 +103,7 @@ public class mainClass {
                     case 2: //elenca le aste che hai creato
                         ArrayList<Auction> lista = peer.getAsteCreate();
                         if (lista.isEmpty())
-                            System.out.println("Non hai creato alcun'asta finora\n");
+                            System.out.println("\nNon hai creato alcun'asta finora\n");
                         else {
                             System.out.println("Ecco la lista di aste che hai creato:\n");
                             for (Auction a : lista)
@@ -115,7 +115,7 @@ public class mainClass {
                         System.out.println("Inserisci il nome dell'asta che vuoi modificare: \n");
                         nome = br.readLine();
                         if (nome.isEmpty()) {
-                            System.out.println("Nessun nome inserito\n");
+                            System.out.println("\nNessun nome inserito\n");
                             break;
                         }
                         if (peer.localSearch(nome) != null) { //sono il proprietario dell'asta quindi posso modificarla
@@ -124,18 +124,18 @@ public class mainClass {
                                 Auction asta = peer.globalSearch(nome);
                                 if (asta != null) {
                                     System.out.println("Hai chiesto di modificare quest'asta:\n\n" + asta +
-                                            "\n\nTi ricordo che non puoi modificare il nome dell'asta ma solo gli altri valori.\n" +
-                                            "Inserisci la nuova descrizione o premi invio per lasciarla invariata\n");
-                                    String in = br.readLine();
+                                            "\n\nTi ricordo che non puoi modificare il nome dell'asta ma solo gli altri valori.\n\n" +
+                                            "Inserisci la nuova descrizione o premi invio per lasciarla invariata:\n");
+                                    in = br.readLine();
                                     if (!in.isEmpty())
                                         asta.setDescription(in);
 
-                                    System.out.println("Inserisci il nuovo prezzo di riserva o premi invio per lasciarlo invariato\n");
+                                    System.out.println("Inserisci il nuovo prezzo di riserva o premi invio per lasciarlo invariato:\n");
                                     in = br.readLine();
                                     if (!in.isEmpty())
                                         asta.setRiserva(Double.parseDouble(in));
 
-                                    System.out.println("Inserisci la data aggiornata di termine dell'asta [gg/mm/yyyy] o premi invio per lasciarlo invariato \n");
+                                    System.out.println("Inserisci la data aggiornata di termine dell'asta [gg/mm/yyyy] o premi invio per lasciarlo invariato:\n");
                                     in = br.readLine();
                                     if (!in.isEmpty())
                                         asta.setEndTime(formatoData.parse(in));
@@ -157,7 +157,7 @@ public class mainClass {
                         System.out.println("Inserisci il nome dell'asta da eliminare: \n");
                         nome = br.readLine();
                         if (nome.isEmpty()) {
-                            System.out.println("Nessun nome inserito\n");
+                            System.out.println("\nNessun nome inserito\n");
                             break;
                         }
                         if (peer.removeAuction(nome))
@@ -182,7 +182,7 @@ public class mainClass {
                     case 6: //mostra le aste seguite
                         ArrayList<String> following = peer.getAsteSeguite();
                         if (following.isEmpty())
-                            System.out.println("Non segui alcun'asta\n");
+                            System.out.println("\nNon segui alcun'asta\n");
                         else {
                             System.out.println("Ecco la lista di tutte le aste che segui:\n");
                             for (String nomeAsta : following)
@@ -194,7 +194,7 @@ public class mainClass {
                         System.out.println("Inserisci il nome dell'asta di cui non vuoi più ricevere notifiche: \n");
                         nome = br.readLine();
                         if (nome.isEmpty()) {
-                            System.out.println("Nessun nome inserito\n");
+                            System.out.println("\nNessun nome inserito\n");
                             break;
                         }
                         if (peer.unfollowAuction(nome))
@@ -207,13 +207,13 @@ public class mainClass {
                         System.out.println("Inserisci il nome dell'asta su cui vuoi puntare: \n");
                         nome = br.readLine();
                         if (nome.isEmpty()) {
-                            System.out.println("Nessun nome inserito\n");
+                            System.out.println("\nNessun nome inserito\n");
                             break;
                         }
                         System.out.println("Inserisci il valore del'offerta Es:10.90 \n");
                         input = br.readLine();
                         if (input.isEmpty()) {
-                            System.out.println("Nessuna puntata inserita\n");
+                            System.out.println("\nNessuna puntata inserita\n");
                             break;
                         }
                         double puntata = Double.parseDouble(input);
@@ -232,7 +232,7 @@ public class mainClass {
                         System.out.println("Inserisci il nome dell'asta di cui vuoi controllare lo stato: \n");
                         nome = br.readLine();
                         if (nome.isEmpty()) {
-                            System.out.println("Nessun nome inserito\n");
+                            System.out.println("\nNessun nome inserito\n");
                             break;
                         }
 

@@ -7,7 +7,6 @@ import pack.Status;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -45,6 +44,7 @@ public class JunitTestAuction {
         //inserisco un'asta con data errata
         assertFalse(peer1.createAuction("Sedia", dataErrata , 20.0, "in ottimo stato"));
     }
+
     @Test
     @Order(2)
     //@Disabled
@@ -61,6 +61,7 @@ public class JunitTestAuction {
         //tenta di rimuovere un'asta inesistente
         assertFalse(peer1.removeAuction("Automobile"));
     }
+
     @Test
     @Order(3)
     //@Disabled
@@ -86,6 +87,7 @@ public class JunitTestAuction {
         Auction b = peer1.globalSearch("Bracciale");
         System.out.println("Ora la riserva è di: " + b.getRiserva());
     }
+
     @Test
     @Order(4)
     //@Disabled
@@ -162,7 +164,7 @@ public class JunitTestAuction {
         a.setEndTime(dataIeri);
         assertTrue(peer1.updateAuction(a));
 
-        //una qualsiasi operazione si faccia su quest'asta implicherà il controllo dello stato e l'avvio delle procedure
+        //ora qualsiasi operazione si faccia su quest'asta implicherà il controllo dello stato e l'avvio delle procedure
         //di dichiarazione del vincitore dell'asta (il peer 2)
         assertNotEquals(peer3.placeAbid("Quadro", 320.0), Status.aperta.toString());
     }
@@ -189,6 +191,7 @@ public class JunitTestAuction {
         assertEquals(peer0.checkAuction("Automobile"), Status.chiusa.toString());
 
     }
+
     @Test
     @Order(8)
     //@Disabled

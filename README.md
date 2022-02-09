@@ -118,8 +118,8 @@ prima da parte di un peer qualsiasi con lancio d’eccezione e successivamente d
 Successivamente, quando il peer smette di seguire l’asta, si osserva la mancata ricezione del feed riguardo un altro aggiornamento.
 * testPlaceAbid(): testa il metodo utilizzato dai peer per fare offerte su un’asta. Viene testato il fallimento della puntata su una propria asta e di una puntata con valore inferiore alla riserva mentre si ha successo quando un peer diverso dal proprietario fa un’offerta con valore maggiore alla soglia di riserva. 
 Infine, si testa il valore restituito da un’offerta andata a buon fine su un’asta aperta.
-* testDeclareTheWinner(): questo test simula la chiusura anticipata di un’asta attraverso la modifica del tempo di scadenza (dato che non avrebbe senso creare un’asta già scaduta, per cui ho inserito il lancio dell’eccezione). 
-Dopo la modifica del tempo qualsiasi operazione si faccia sull’asta implica l’innesco della procedura di terminazione che invia il messaggio di congratulazioni al vincitore e un altro al proprietario che chiude l’asta definitivamente.
+* testDeclareTheWinner(): questo test simula la chiusura anticipata di un’asta attraverso la modifica del tempo di scadenza (dato che non avrebbe senso creare un’asta già scaduta, per cui ho previsto il lancio dell’eccezione in tal caso). 
+Dopo la modifica del tempo qualsiasi operazione si faccia sull’asta implica l’avvio della procedura di terminazione che comprende l'invio del messaggio di congratulazioni al vincitore e un altro al proprietario che chiude l’asta definitivamente aggiornando lo stato dell'oggetto in DHT.
 * testCheckAuction(): testa i valori restituiti dal metodo checkAuction che, a partire dal nome di un'asta (e se questa esiste) ne restituisce lo stato altrimenti restituisce null. 
 In particolare, dopo aver creato un'asta si controlla che il metodo ci dica che è aperta, 
 successivamente si controlla che questo restituisca null nel caso si voglia controllare un'asta inesistente, 
@@ -174,7 +174,7 @@ docker run -i --name PEER-1 -e MASTERIP="172.17.0.2" -e ID=1 progetto_adc
 ```shell
 docker start -i [nome-container]
 ```
-,dove [nome-container] è il nome indicato dal parametro --name nel comando run in fase di creazione.
+dove [nome-container] è il nome indicato dal parametro --name nel comando run in fase di creazione.
 
 Per ottenere la lista di tutti i container con le relative informazioni, tra cui il nome, nel caso in cui non lo ricordassimo:
 ```shell

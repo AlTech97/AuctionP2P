@@ -17,7 +17,7 @@ public class AuctionMechanism implements AuctionMechanismInterface {
     final private ArrayList<String> asteSeguite;    //aste a cui partecipo
     final private Peer peer;
     final private PeerDHT dht;
-    final private int DEFAULT_MASTER_PORT = 4000;
+    final static private int DEFAULT_MASTER_PORT = 4000;
     private Thread thread;
     private LinkedBlockingQueue<Message> messageQueue;
 
@@ -67,10 +67,10 @@ public class AuctionMechanism implements AuctionMechanismInterface {
                     Message msg = messageQueue.take();
                     //un'asta che seguo ha subito una modifica o ha ricevuto un'offerta, stampa l'asta aggiornata
                     if (msg.getType().equals(Message.MessageType.feed))
-                        System.out.println("peer"+ myid + ": (Aggiornamento) " + msg.getAsta().toString());
+                        System.out.println("peer"+ myid + ": (Aggiornamento) " + msg.getAsta().toString() +"\n");
                     //ho vinto un'asta, stampa il messaggio di vittoria ricevuto
                     else if (msg.getType().equals(Message.MessageType.victory))
-                        System.out.println("peer"+myid + ": (Vittoria) " + msg.getText());
+                        System.out.println("peer"+myid + ": (Vittoria) " + msg.getText()+"\n");
                     //ho ricevuto un messaggio di bid
                     else if (msg.getType().equals(Message.MessageType.bid)) {
                         Bid offerta = msg.getBid();

@@ -8,7 +8,7 @@ public class Message implements Serializable {
     public enum MessageType{
         feed,           //se il messaggio è un feed, conterrà un oggetto Auction con le info aggiornate da inviare ai followers
         bid,            //se il messaggio è un offerta conterrà un oggetto Bid con le info sulla puntata
-        victory,        //se il messaggio è di vittoria significa che chi lo riceve otterrà un testo con le congratulazioni
+        victory,        //se il messaggio è di vittoria significa che chi lo riceve otterrà un testo con le congratulazioni e il prezzo di vincita
         dhtUpdate       //se il messaggio è un dhtUpdate, conterrà un Auction con le informazioni che l'owner dell'asta dovrà aggiornare
     }
 
@@ -60,7 +60,6 @@ public class Message implements Serializable {
         this.bid = null;
         this.asta = null;
     }
-
 
     public Auction getAsta() {
         return asta;
