@@ -11,7 +11,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class mainClass {
+public class MainClass {
     @Option(name="-m", aliases="--masterip", usage="the master peer ip address", required=true)
     private static String master;
     @Option(name="-id", aliases="--identifierpeer", usage="the unique identifier for this peer", required=true)
@@ -19,13 +19,13 @@ public class mainClass {
 
     public static void main(String[] args) throws Exception {
         //ottengo i parametri dalla linea di comando
-        mainClass classe = new mainClass();
+        MainClass classe = new MainClass();
         final CmdLineParser parser = new CmdLineParser(classe);
         parser.parseArgument(args);
         //inizializzo il meccanismo d'asta con i parametri letti
         AuctionMechanism peer = new AuctionMechanism(id, master);
         //dichiaro una serie di variabili e oggetti che mi serviranno nel menù
-        String input, nome, in;
+        String  nome, in;
         String regex = "[0-9]+";
         Pattern p = Pattern.compile(regex);
         Matcher m;
@@ -36,6 +36,7 @@ public class mainClass {
 
         while (true) {
             try {
+
                 System.out.println("\nMENU: Digita un numero per effettuare l'operazione\n");
                 System.out.println("(0) - ELENCA TUTTE LE ASTE APERTE\n");
                 System.out.println("(1) - CREA UN'ASTA\n");
@@ -48,13 +49,13 @@ public class mainClass {
                 System.out.println("(8) - FAI UNA PUNTATA\n");
                 System.out.println("(9) - VERIFICA LO STATO DI UN'ASTA\n");
                 System.out.println("(10) - ESCI\n");
-                
-                input = br.readLine();
-                m = p.matcher(input);
-                if (input.isEmpty() || !m.matches())
+
+                in = br.readLine();
+                m = p.matcher(in);
+                if (in.isEmpty() || !m.matches())
                     menu = -1;
                 else
-                    menu = Integer.parseInt(input);
+                    menu = Integer.parseInt(in);
 
                 switch (menu) {
                     case 0: //mostra tutte le aste aperte
@@ -93,7 +94,7 @@ public class mainClass {
                             System.out.println("\nLa data di termine di un'asta è obbligatoria\n");
                             break;
                         }
-                        Date data = formatoData.parse(input);
+                        Date data = formatoData.parse(in);
                         if (peer.createAuction(nome, data, prezzo, descrizione))
                             System.out.println("\nAsta creata con successo\n");
                         else
@@ -211,12 +212,12 @@ public class mainClass {
                             break;
                         }
                         System.out.println("Inserisci il valore del'offerta Es:10.90 \n");
-                        input = br.readLine();
-                        if (input.isEmpty()) {
+                        in = br.readLine();
+                        if (in.isEmpty()) {
                             System.out.println("\nNessuna puntata inserita\n");
                             break;
                         }
-                        double puntata = Double.parseDouble(input);
+                        double puntata = Double.parseDouble(in);
 
                         //se la puntata è stata fatta su un asta aperta
                         String stato = peer.placeAbid(nome, puntata);

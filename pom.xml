@@ -37,7 +37,7 @@
                             <archive>
                                 <manifest>
                                     <mainClass>
-                                        pack.mainClass
+                                        pack.MainClass
                                     </mainClass>
                                 </manifest>
                             </archive>
